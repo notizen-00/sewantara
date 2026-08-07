@@ -1,0 +1,254 @@
+name: Reusable / Docker image
+
+# Builds exactly one component image. Every caller (CI, CD, release) goes
+# through this workflow so that image naming, labels, cache scopes and
+# vulnerability scanning are identical no matter what triggered the build.
+
+on:
+  workflow_call:
+    inputs:
+      component:
+        description: Component name from .github/components.json (used as cache scope).
+        type: string
+        required: true
+      context:
+        description: Docker build context, relative to the repository root.
+        type: string
+        required: true
+      dockerfile:
+        description: Path to the Dockerfile, relative to the repository root.
+        type: string
+        required: true
+      target:
+        description: Dockerfile stage to build.
+        type: string
+        required: false
+        default: ''
+      image:
+        description: Image name without registry/owner, e.g. sewantara-api.
+        type: string
+        required: true
+      platforms:
+        type: string
+        required: false
+        default: linux/amd64
+      push:
+        description: Push to GHCR. Pull requests build without pushing.
+        type: boolean
+        required: false
+        default: false
+      tags:
+        description: Extra raw tags (one per line) appended to the derived tags.
+        type: string
+        required: false
+        default: ''
+      extra-build-args:
+        description: Extra build args (KEY=VALUE, one per line) merged after the defaults.
+        type: string
+        required: false
+        default: ''
+      scan:
+        description: Run a Trivy vulnerability scan on the pushed image.
+        type: boolean
+        required: false
+        default: true
+      fail-on-vulnerabilities:
+        description: Fail the job when the scan reports CRITICAL findings.
+        type: boolean
+        required: false
+        default: false
+    outputs:
+      image-ref:
+        description: Fully qualified image reference pinned by digest.
+        value: ${{ jobs.build.outputs.image-ref }}
+      digest:
+        description: Image digest produced by the build.
+        value: ${{ jobs.build.outputs.digest }}
+      tags:
+        description: Newline separated list of tags that were applied.
+        value: ${{ jobs.build.outputs.tags }}
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: ${{ inputs.component }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: read
+      packages: write
+      security-events: write
+    outputs:
+      image-ref: ${{ steps.ref.outputs.image-ref }}
+      digest: ${{ steps.build.outputs.digest }}
+      tags: ${{ steps.meta.outputs.tags }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Resolve registry namespace
+        id: registry
+        env:
+          OWNER: ${{ github.repository_owner }}
+        run: |
+          set -euo pipefail
+          # GHCR namespaces must be lowercase; GitHub logins are not.
+          echo "namespace=ghcr.io/$(printf '%s' "${OWNER}" | tr '[:upper:]' '[:lower:]')" \
+            >>"${GITHUB_OUTPUT}"
+
+      - name: Collect build args
+        id: args
+        env:
+          COMPONENT: ${{ inputs.component }}
+          EXTRA: ${{ inputs.extra-build-args }}
+          VITE_APP_NAME: ${{ vars.VITE_APP_NAME || 'Sewantara' }}
+          VITE_REVERB_APP_KEY: ${{ vars.VITE_REVERB_APP_KEY }}
+          VITE_REVERB_HOST: ${{ vars.VITE_REVERB_HOST }}
+          VITE_REVERB_PORT: ${{ vars.VITE_REVERB_PORT || '443' }}
+          VITE_REVERB_SCHEME: ${{ vars.VITE_REVERB_SCHEME || 'https' }}
+          NUXT_PUBLIC_API_BASE: ${{ vars.NUXT_PUBLIC_API_BASE }}
+        run: |
+          set -euo pipefail
+          # Only two components bake configuration into their bundle:
+          #   api/api-web -> Vite assets compiled by the frontend stage
+          #   dashboard   -> SPA build (ssr:false), see docs/02_DOCKER_IMAGES.md
+          # tenant-web and landing read everything from runtime env instead.
+          emit() { # emit KEY VALUE -- skips empty values so the Dockerfile default wins
+            if [ -n "${2}" ]; then printf '%s=%s\n' "${1}" "${2}"; fi
+          }
+
+          {
+            case "${COMPONENT}" in
+              api|api-web)
+                emit VITE_APP_NAME "${VITE_APP_NAME}"
+                emit VITE_REVERB_APP_KEY "${VITE_REVERB_APP_KEY}"
+                emit VITE_REVERB_HOST "${VITE_REVERB_HOST}"
+                emit VITE_REVERB_PORT "${VITE_REVERB_PORT}"
+                emit VITE_REVERB_SCHEME "${VITE_REVERB_SCHEME}"
+                ;;
+              dashboard)
+                emit NUXT_PUBLIC_API_BASE "${NUXT_PUBLIC_API_BASE}"
+                ;;
+            esac
+            printf '%s\n' "${EXTRA}"
+          } | grep -v '^[[:space:]]*$' >build-args.txt || true
+
+          {
+            echo 'value<<__EOF__'
+            cat build-args.txt
+            echo '__EOF__'
+          } >>"${GITHUB_OUTPUT}"
+
+          echo '::group::build args (values hidden)'
+          cut -d= -f1 build-args.txt || true
+          echo '::endgroup::'
+
+      - name: Set up QEMU
+        if: contains(inputs.platforms, 'arm')
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        if: inputs.push
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Derive tags and labels
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ steps.registry.outputs.namespace }}/${{ inputs.image }}
+          flavor: |
+            latest=false
+          tags: |
+            type=sha,format=long,prefix=sha-
+            type=ref,event=branch
+            type=ref,event=pr,prefix=pr-
+            type=raw,value=edge,enable={{is_default_branch}}
+            ${{ inputs.tags }}
+          labels: |
+            org.opencontainers.image.title=${{ inputs.image }}
+            org.opencontainers.image.description=Sewantara ${{ inputs.component }} component
+            org.opencontainers.image.vendor=Sewantara
+            io.sewantara.component=${{ inputs.component }}
+            io.sewantara.build-run=${{ github.run_id }}
+
+      - name: Build${{ inputs.push && ' and push' || '' }}
+        id: build
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ inputs.context }}
+          file: ${{ inputs.dockerfile }}
+          target: ${{ inputs.target }}
+          platforms: ${{ inputs.platforms }}
+          push: ${{ inputs.push }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: ${{ steps.args.outputs.value }}
+          provenance: ${{ inputs.push && 'mode=max' || 'false' }}
+          sbom: ${{ inputs.push }}
+          cache-from: type=gha,scope=${{ inputs.component }}
+          cache-to: type=gha,mode=max,scope=${{ inputs.component }}
+
+      - name: Compose digest reference
+        id: ref
+        env:
+          NAMESPACE: ${{ steps.registry.outputs.namespace }}
+          IMAGE: ${{ inputs.image }}
+          DIGEST: ${{ steps.build.outputs.digest }}
+        run: |
+          set -euo pipefail
+          if [ -n "${DIGEST}" ]; then
+            echo "image-ref=${NAMESPACE}/${IMAGE}@${DIGEST}" >>"${GITHUB_OUTPUT}"
+          else
+            echo "image-ref=" >>"${GITHUB_OUTPUT}"
+          fi
+
+      - name: Scan image
+        id: scan
+        if: inputs.push && inputs.scan
+        uses: aquasecurity/trivy-action@0.28.0
+        continue-on-error: ${{ !inputs.fail-on-vulnerabilities }}
+        env:
+          TRIVY_USERNAME: ${{ github.actor }}
+          TRIVY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          image-ref: ${{ steps.ref.outputs.image-ref }}
+          format: sarif
+          output: trivy-${{ inputs.component }}.sarif
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          exit-code: ${{ inputs.fail-on-vulnerabilities && '1' || '0' }}
+
+      - name: Publish scan results
+        if: always() && steps.scan.outcome != 'skipped'
+        continue-on-error: true
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: trivy-${{ inputs.component }}.sarif
+          category: trivy-${{ inputs.component }}
+
+      - name: Summarise
+        if: always()
+        env:
+          COMPONENT: ${{ inputs.component }}
+          PUSHED: ${{ inputs.push }}
+          TAGS: ${{ steps.meta.outputs.tags }}
+          DIGEST: ${{ steps.build.outputs.digest }}
+        run: |
+          {
+            echo "### Image \`${COMPONENT}\`"
+            echo
+            echo "- pushed: \`${PUSHED}\`"
+            echo "- digest: \`${DIGEST:-n/a}\`"
+            echo '- tags:'
+            printf '%s\n' "${TAGS}" | sed 's/^/  - `/; s/$/`/'
+          } >>"${GITHUB_STEP_SUMMARY}"

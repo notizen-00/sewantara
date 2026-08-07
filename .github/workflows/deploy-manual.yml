@@ -1,0 +1,99 @@
+name: Deploy (manual)
+
+# Escape hatch for the two cases the automated flows do not cover:
+#   1. rolling back to an image tag that is already in GHCR
+#   2. re-deploying an unchanged tag after host maintenance
+#
+# It never builds. If the tag does not exist in the registry the deploy fails
+# fast instead of silently running something else.
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Target environment
+        type: choice
+        options: [staging, production]
+        required: true
+      apps:
+        description: 'Apps to deploy (space separated: api dashboard tenant-web landing)'
+        type: string
+        required: true
+      image-tag:
+        description: 'Image tag already published in GHCR (e.g. 1.3.0 or sha-<full sha>)'
+        type: string
+        required: true
+      git-ref:
+        description: Git ref the host checks out for deploy/ scripts and compose
+        type: string
+        default: main
+      run-migrations:
+        description: Run API migrations (leave off when rolling back)
+        type: boolean
+        default: false
+
+concurrency:
+  group: deploy-${{ inputs.environment }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: Verify image tags exist
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      packages: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Inspect manifests
+        env:
+          APPS: ${{ inputs.apps }}
+          TAG: ${{ inputs.image-tag }}
+          OWNER: ${{ github.repository_owner }}
+        run: |
+          set -euo pipefail
+          namespace="ghcr.io/$(printf '%s' "${OWNER}" | tr '[:upper:]' '[:lower:]')"
+          missing=0
+
+          for app in ${APPS}; do
+            images="$(jq -r --arg app "${app}" \
+              '.[] | select(.app == $app) | .image' .github/components.json)"
+            if [ -z "${images}" ]; then
+              echo "::error::unknown app '${app}'"; exit 1
+            fi
+            for image in ${images}; do
+              ref="${namespace}/${image}:${TAG}"
+              if docker buildx imagetools inspect "${ref}" >/dev/null 2>&1; then
+                echo "found  ${ref}"
+              else
+                echo "::error::missing ${ref}"
+                missing=1
+              fi
+            done
+          done
+
+          [ "${missing}" -eq 0 ]
+
+  deploy:
+    name: Deploy
+    needs: verify
+    uses: ./.github/workflows/reusable-deploy.yml
+    with:
+      environment: ${{ inputs.environment }}
+      ref: ${{ inputs.git-ref }}
+      tag: ${{ inputs.image-tag }}
+      apps: ${{ inputs.apps }}
+      run-migrations: ${{ inputs.run-migrations }}
+    secrets: inherit

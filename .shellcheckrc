@@ -1,0 +1,11 @@
+# ShellCheck configuration for deploy/scripts/*.sh
+# Enforced by the "deploy scripts" job in .github/workflows/ci.yml.
+
+# lib.sh is sourced, never executed. Let ShellCheck follow the `source=`
+# directives so it understands the helpers the other scripts call.
+external-sources=true
+
+# SC2034 — "variable appears unused". lib.sh exists to define variables and
+# helpers for its callers; per-file analysis cannot see the use sites. Disabling
+# it here is accurate, not a workaround.
+disable=SC2034

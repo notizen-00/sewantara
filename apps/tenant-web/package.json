@@ -1,0 +1,46 @@
+{
+  "name": "sewantara-tenant-web",
+  "type": "module",
+  "private": true,
+  "engines": {
+    "node": ">=22.19.0"
+  },
+  "scripts": {
+    "build": "nuxt build",
+    "dev": "nuxt dev",
+    "generate": "nuxt generate",
+    "typecheck": "nuxt typecheck",
+    "lint": "eslint .",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "preview": "nuxt preview",
+    "postinstall": "nuxt prepare"
+  },
+  "dependencies": {
+    "@iconify/vue": "^5.0.1",
+    "@nuxt/image": "^2.1.0",
+    "@pinia/nuxt": "^1.0.1",
+    "@tailwindcss/vite": "^4.3.3",
+    "@vee-validate/zod": "^4.15.1",
+    "@vueuse/core": "^14.4.0",
+    "dayjs": "^1.11.21",
+    "nuxt": "^4.5.1",
+    "pinia": "^4.0.2",
+    "tailwindcss": "^4.3.3",
+    "vee-validate": "^4.15.1",
+    "vue": "^3.5.40",
+    "vue-router": "^5.2.0",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@nuxt/eslint": "^1.16.0",
+    "@nuxt/test-utils": "^4.1.0",
+    "@vue/test-utils": "^2.4.11",
+    "eslint": "^10.8.0",
+    "happy-dom": "^20.11.1",
+    "prettier": "^3.9.6",
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.10",
+    "vue-tsc": "^3.3.9"
+  }
+}

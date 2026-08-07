@@ -1,0 +1,68 @@
+name: Bug report
+description: Ada yang rusak di salah satu app Sewantara
+labels: [bug, triage]
+body:
+  - type: dropdown
+    id: app
+    attributes:
+      label: App
+      options:
+        - api (Laravel)
+        - dashboard (Nuxt SPA)
+        - tenant-web (Nuxt SSR)
+        - landing (Nuxt)
+        - deploy / CI
+        - belum tahu
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Versi / image tag
+      description: 'Ambil dari `make status` di server, atau tag rilis. Contoh: api-v1.4.0 / sha-abc123…'
+      placeholder: api-v1.4.0
+    validations:
+      required: false
+
+  - type: dropdown
+    id: environment
+    attributes:
+      label: Environment
+      options: [production, staging, local]
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Yang diharapkan
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Yang terjadi
+      description: Sertakan pesan error, response body, atau potongan log.
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Langkah reproduksi
+      value: |
+        1.
+        2.
+        3.
+    validations:
+      required: true
+
+  - type: input
+    id: tenant
+    attributes:
+      label: Tenant terdampak
+      description: Slug atau domain tenant, jika bug spesifik per tenant.
+    validations:
+      required: false

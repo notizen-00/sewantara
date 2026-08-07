@@ -1,0 +1,31 @@
+# Path filters consumed by dorny/paths-filter (see .github/actions/detect-components).
+#
+# `pipeline` is intentionally folded into every app: when the build/deploy
+# plumbing changes we want every image rebuilt so the change is proven.
+
+pipeline: &pipeline
+  - '.github/workflows/**'
+  - '.github/actions/**'
+  - '.github/components.json'
+  - '.github/filters.yml'
+  - 'deploy/compose*.yml'
+
+api:
+  - *pipeline
+  - 'apps/api/**'
+
+dashboard:
+  - *pipeline
+  - 'apps/dashboard/**'
+
+tenant-web:
+  - *pipeline
+  - 'apps/tenant-web/**'
+
+landing:
+  - *pipeline
+  - 'apps/landing/**'
+
+docs:
+  - 'docs/**'
+  - '**/*.md'

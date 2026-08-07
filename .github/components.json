@@ -1,0 +1,52 @@
+[
+  {
+    "component": "api",
+    "app": "api",
+    "runtime": "php",
+    "context": "apps/api",
+    "dockerfile": "apps/api/Dockerfile",
+    "target": "app",
+    "image": "sewantara-api",
+    "platforms": "linux/amd64"
+  },
+  {
+    "component": "api-web",
+    "app": "api",
+    "runtime": "php",
+    "context": "apps/api",
+    "dockerfile": "apps/api/Dockerfile",
+    "target": "web",
+    "image": "sewantara-api-web",
+    "platforms": "linux/amd64"
+  },
+  {
+    "component": "dashboard",
+    "app": "dashboard",
+    "runtime": "node",
+    "context": "apps/dashboard",
+    "dockerfile": "apps/dashboard/Dockerfile",
+    "target": "runner",
+    "image": "sewantara-dashboard",
+    "platforms": "linux/amd64"
+  },
+  {
+    "component": "tenant-web",
+    "app": "tenant-web",
+    "runtime": "node",
+    "context": "apps/tenant-web",
+    "dockerfile": "apps/tenant-web/Dockerfile",
+    "target": "runtime",
+    "image": "sewantara-tenant-web",
+    "platforms": "linux/amd64"
+  },
+  {
+    "component": "landing",
+    "app": "landing",
+    "runtime": "node",
+    "context": "apps/landing",
+    "dockerfile": "apps/landing/Dockerfile",
+    "target": "runner",
+    "image": "sewantara-landing",
+    "platforms": "linux/amd64"
+  }
+]

@@ -1,0 +1,116 @@
+name: Detect components
+description: >
+  Resolve which deployable components changed, using .github/filters.yml as the
+  path map and .github/components.json as the single source of truth for what a
+  component is (context, dockerfile target, image name).
+
+inputs:
+  apps:
+    description: >
+      Explicit app selection (space or comma separated, e.g. "api dashboard").
+      When set, path detection is skipped entirely. Used by the release flow.
+    required: false
+    default: ''
+  all:
+    description: Select every component regardless of what changed.
+    required: false
+    default: 'false'
+  base:
+    description: >
+      Git ref to diff against. Leave empty to let paths-filter pick the right
+      base for the event (PR base branch, or the previous commit on a push).
+    required: false
+    default: ''
+
+outputs:
+  matrix:
+    description: 'Ready-to-use matrix object: {"include":[{component,app,context,dockerfile,target,image,platforms}]}'
+    value: ${{ steps.plan.outputs.matrix }}
+  components:
+    description: JSON array of selected component names.
+    value: ${{ steps.plan.outputs.components }}
+  apps:
+    description: JSON array of selected app names (deduplicated).
+    value: ${{ steps.plan.outputs.apps }}
+  apps-list:
+    description: Space separated app names, convenient for shell/SSH commands.
+    value: ${{ steps.plan.outputs.apps-list }}
+  apps-node:
+    description: JSON array of selected apps whose runtime is "node" (the Nuxt apps).
+    value: ${{ steps.plan.outputs.apps-node }}
+  apps-php:
+    description: JSON array of selected apps whose runtime is "php".
+    value: ${{ steps.plan.outputs.apps-php }}
+  count:
+    description: Number of selected components.
+    value: ${{ steps.plan.outputs.count }}
+  has-components:
+    description: '"true" when at least one component was selected.'
+    value: ${{ steps.plan.outputs.has-components }}
+
+runs:
+  using: composite
+  steps:
+    - name: Filter changed paths
+      id: filter
+      if: inputs.apps == '' && inputs.all != 'true'
+      uses: dorny/paths-filter@v3
+      with:
+        base: ${{ inputs.base }}
+        filters: .github/filters.yml
+
+    - name: Build component plan
+      id: plan
+      shell: bash
+      env:
+        APPS: ${{ inputs.apps }}
+        ALL: ${{ inputs.all }}
+        CHANGED: ${{ steps.filter.outputs.changes }}
+      run: |
+        set -euo pipefail
+        registry='.github/components.json'
+
+        if [ -n "${APPS}" ]; then
+          selected="$(printf '%s' "${APPS}" | tr ',' ' ' \
+            | jq -Rc 'split(" ") | map(select(length > 0))')"
+          source='explicit input'
+        elif [ "${ALL}" = 'true' ]; then
+          selected="$(jq -c '[.[].app] | unique' "${registry}")"
+          source='all components'
+        else
+          selected="$(printf '%s' "${CHANGED:-[]}" | jq -c '.')"
+          source='changed paths'
+        fi
+
+        include="$(jq -c --argjson sel "${selected}" \
+          '[ .[] | select(.app as $a | $sel | index($a)) ]' "${registry}")"
+        count="$(jq 'length' <<<"${include}")"
+        apps="$(jq -c '[.[].app] | unique' <<<"${include}")"
+
+        # Split by runtime so the CI matrices never have to use `exclude` — an
+        # empty matrix after exclusion is a fragile edge case.
+        apps_node="$(jq -c '[.[] | select(.runtime == "node") | .app] | unique' <<<"${include}")"
+        apps_php="$(jq -c '[.[] | select(.runtime == "php") | .app] | unique' <<<"${include}")"
+
+        {
+          echo "matrix={\"include\":${include}}"
+          echo "components=$(jq -c '[.[].component]' <<<"${include}")"
+          echo "apps=${apps}"
+          echo "apps-list=$(jq -r 'join(" ")' <<<"${apps}")"
+          echo "apps-node=${apps_node}"
+          echo "apps-php=${apps_php}"
+          echo "count=${count}"
+          if [ "${count}" -gt 0 ]; then
+            echo 'has-components=true'
+          else
+            echo 'has-components=false'
+          fi
+        } >>"${GITHUB_OUTPUT}"
+
+        {
+          echo "### Component plan"
+          echo
+          echo "- selection source: \`${source}\`"
+          echo "- components (${count}): \`$(jq -r '[.[].component] | join(", ")' <<<"${include}")\`"
+          echo "- apps: \`$(jq -r 'join(", ")' <<<"${apps}")\`"
+        } >>"${GITHUB_STEP_SUMMARY}"

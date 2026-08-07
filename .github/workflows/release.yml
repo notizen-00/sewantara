@@ -1,0 +1,162 @@
+name: Release (production)
+
+# Production ships from an annotated git tag, one per app:
+#
+#   api-v1.4.0        dashboard-v0.3.1
+#   tenant-web-v2.0.0 landing-v1.1.0
+#   release-v1.5.0    -> all four apps at once
+#
+# The tag is the audit trail: it names the app, the version, and the exact
+# commit. See docs/05_VERSIONING_RELEASE.md.
+
+on:
+  push:
+    tags:
+      - 'api-v*'
+      - 'dashboard-v*'
+      - 'tenant-web-v*'
+      - 'landing-v*'
+      - 'release-v*'
+
+concurrency:
+  group: release-production
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  plan:
+    name: Plan
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      matrix: ${{ steps.detect.outputs.matrix }}
+      apps-list: ${{ steps.detect.outputs.apps-list }}
+      has-components: ${{ steps.detect.outputs.has-components }}
+      version: ${{ steps.tag.outputs.version }}
+      image-tags: ${{ steps.tag.outputs.image-tags }}
+      prerelease: ${{ steps.tag.outputs.prerelease }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Parse release tag
+        id: tag
+        env:
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          pattern='^(api|dashboard|tenant-web|landing|release)-v([0-9]+)\.([0-9]+)\.([0-9]+)(-[0-9A-Za-z.-]+)?$'
+          if [[ ! "${REF_NAME}" =~ ${pattern} ]]; then
+            echo "::error::tag '${REF_NAME}' does not match <app>-v<major>.<minor>.<patch>[-prerelease]"
+            exit 1
+          fi
+
+          scope="${BASH_REMATCH[1]}"
+          major="${BASH_REMATCH[2]}"
+          minor="${BASH_REMATCH[3]}"
+          patch="${BASH_REMATCH[4]}"
+          pre="${BASH_REMATCH[5]}"
+          version="${major}.${minor}.${patch}${pre}"
+
+          if [ "${scope}" = 'release' ]; then
+            apps='api dashboard tenant-web landing'
+          else
+            apps="${scope}"
+          fi
+
+          {
+            echo "version=${version}"
+            echo "apps=${apps}"
+            if [ -n "${pre}" ]; then echo 'prerelease=true'; else echo 'prerelease=false'; fi
+            echo 'image-tags<<__EOF__'
+            echo "type=raw,value=${version}"
+            # Moving tags only for stable releases; a prerelease must never
+            # become `latest` or hijack the x.y line.
+            if [ -z "${pre}" ]; then
+              echo "type=raw,value=${major}.${minor}"
+              echo "type=raw,value=${major}"
+              echo 'type=raw,value=latest'
+            fi
+            echo '__EOF__'
+          } >>"${GITHUB_OUTPUT}"
+
+      - id: detect
+        uses: ./.github/actions/detect-components
+        with:
+          apps: ${{ steps.tag.outputs.apps }}
+
+  image:
+    name: image
+    needs: plan
+    if: needs.plan.outputs.has-components == 'true'
+    strategy:
+      fail-fast: true
+      matrix: ${{ fromJSON(needs.plan.outputs.matrix) }}
+    uses: ./.github/workflows/reusable-docker.yml
+    with:
+      component: ${{ matrix.component }}
+      context: ${{ matrix.context }}
+      dockerfile: ${{ matrix.dockerfile }}
+      target: ${{ matrix.target }}
+      image: ${{ matrix.image }}
+      platforms: ${{ matrix.platforms }}
+      push: true
+      scan: true
+      tags: ${{ needs.plan.outputs.image-tags }}
+
+  deploy:
+    name: Deploy
+    needs: [plan, image]
+    uses: ./.github/workflows/reusable-deploy.yml
+    with:
+      environment: production
+      ref: ${{ github.ref_name }}
+      tag: ${{ needs.plan.outputs.version }}
+      apps: ${{ needs.plan.outputs.apps-list }}
+    secrets: inherit
+
+  notes:
+    name: Release notes
+    needs: [plan, deploy]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ github.ref_name }}
+          APPS: ${{ needs.plan.outputs.apps-list }}
+          IMAGE_TAG: ${{ needs.plan.outputs.version }}
+          PRERELEASE: ${{ needs.plan.outputs.prerelease }}
+          OWNER: ${{ github.repository_owner }}
+        run: |
+          set -euo pipefail
+          namespace="ghcr.io/$(printf '%s' "${OWNER}" | tr '[:upper:]' '[:lower:]')"
+
+          {
+            echo "Deployed apps: \`${APPS}\`"
+            echo
+            echo '### Images'
+            echo
+            for app in ${APPS}; do
+              case "${app}" in
+                api)
+                  echo "- \`${namespace}/sewantara-api:${IMAGE_TAG}\`"
+                  echo "- \`${namespace}/sewantara-api-web:${IMAGE_TAG}\`"
+                  ;;
+                *) echo "- \`${namespace}/sewantara-${app}:${IMAGE_TAG}\`" ;;
+              esac
+            done
+          } >notes.md
+
+          flags=(--generate-notes --notes-file notes.md --title "${TAG}")
+          if [ "${PRERELEASE}" = 'true' ]; then flags+=(--prerelease); fi
+
+          gh release create "${TAG}" "${flags[@]}"

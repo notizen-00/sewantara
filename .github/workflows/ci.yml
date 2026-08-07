@@ -1,0 +1,192 @@
+name: CI
+
+# Quality gate. Runs only the checks that belong to the apps touched by the
+# change, then proves every affected image still builds (without pushing).
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      all:
+        description: Check every app regardless of what changed
+        type: boolean
+        default: true
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  plan:
+    name: Plan
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      matrix: ${{ steps.detect.outputs.matrix }}
+      apps: ${{ steps.detect.outputs.apps }}
+      apps-node: ${{ steps.detect.outputs.apps-node }}
+      apps-php: ${{ steps.detect.outputs.apps-php }}
+      has-components: ${{ steps.detect.outputs.has-components }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - id: detect
+        uses: ./.github/actions/detect-components
+        with:
+          all: ${{ inputs.all || 'false' }}
+
+  api:
+    name: api (Laravel)
+    needs: plan
+    if: contains(fromJSON(needs.plan.outputs.apps-php), 'api')
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    defaults:
+      run:
+        working-directory: apps/api
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          # Matches the php:8.4-fpm base image in apps/api/Dockerfile.
+          php-version: '8.4'
+          extensions: bcmath, exif, intl, mbstring, pcntl, pdo_pgsql, pdo_sqlite, redis, sockets, zip
+          coverage: none
+          tools: composer:v2
+
+      - name: Cache Composer packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.composer/cache
+          key: composer-${{ runner.os }}-php8.4-${{ hashFiles('apps/api/composer.lock') }}
+          restore-keys: composer-${{ runner.os }}-php8.4-
+
+      - name: Install PHP dependencies
+        run: composer install --prefer-dist --no-interaction --no-progress
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: apps/api/package-lock.json
+
+      - name: Install node dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Prepare environment
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+
+      - name: Check code style
+        run: vendor/bin/pint --test
+
+      - name: Build Vite assets
+        run: npm run build
+
+      - name: Run tests
+        run: php artisan test
+
+  node:
+    name: ${{ matrix.app }} (Nuxt)
+    needs: plan
+    if: needs.plan.outputs.apps-node != '[]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        app: ${{ fromJSON(needs.plan.outputs.apps-node) }}
+    defaults:
+      run:
+        working-directory: apps/${{ matrix.app }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: apps/${{ matrix.app }}/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
+      # --if-present keeps the matrix uniform while apps adopt checks at their
+      # own pace; a missing script is a no-op, a failing script fails CI.
+      - name: Lint
+        run: npm run lint --if-present
+
+      - name: Typecheck
+        run: npm run typecheck --if-present
+
+      - name: Test
+        run: npm run test --if-present
+
+      - name: Build
+        run: npm run build
+
+  image:
+    name: image
+    needs: plan
+    if: needs.plan.outputs.has-components == 'true'
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.plan.outputs.matrix) }}
+    uses: ./.github/workflows/reusable-docker.yml
+    with:
+      component: ${{ matrix.component }}
+      context: ${{ matrix.context }}
+      dockerfile: ${{ matrix.dockerfile }}
+      target: ${{ matrix.target }}
+      image: ${{ matrix.image }}
+      platforms: ${{ matrix.platforms }}
+      push: false
+      scan: false
+
+  deploy-lint:
+    name: deploy scripts
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Shellcheck deploy scripts
+        run: shellcheck --severity=warning deploy/scripts/*.sh
+
+      # Exercises the real bootstrap path (templates -> config files) and then
+      # validates the compose file, so a broken template fails here rather than
+      # on the server.
+      - name: Bootstrap from templates and validate compose
+        run: deploy/scripts/bootstrap.sh --check
+
+  ci:
+    name: CI passed
+    if: always()
+    needs: [plan, api, node, image, deploy-lint]
+    runs-on: ubuntu-latest
+    steps:
+      # Single required status check for branch protection: green only when no
+      # needed job failed or was cancelled (skipped is fine — nothing changed).
+      - name: Verify job results
+        env:
+          RESULTS: ${{ join(needs.*.result, ' ') }}
+        run: |
+          set -euo pipefail
+          echo "results: ${RESULTS}"
+          for result in ${RESULTS}; do
+            case "${result}" in
+              success|skipped) ;;
+              *) echo "::error::a required job reported '${result}'"; exit 1 ;;
+            esac
+          done

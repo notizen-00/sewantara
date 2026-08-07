@@ -1,0 +1,42 @@
+# Single-app development stack for apps/landing.
+#
+# NOT the production deployment — that is deploy/compose.yml, which pulls
+# CI-built images for all four apps.
+
+name: sewantara-landing-dev
+
+services:
+  landing:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runner
+    image: sewantara-landing:${IMAGE_TAG:-local}
+    init: true
+    restart: unless-stopped
+    ports:
+      - "${APP_PORT:-3003}:3003"
+    environment:
+      NODE_ENV: production
+      HOST: 0.0.0.0
+      PORT: 3003
+      TZ: ${TZ:-Asia/Jakarta}
+    security_opt:
+      - no-new-privileges:true
+    tmpfs:
+      - /tmp
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:3003/healthz').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"

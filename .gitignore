@@ -1,0 +1,55 @@
+# ---------------------------------------------------------------------------
+# Sewantara monorepo — root ignore rules.
+# Per-app rules stay in apps/<app>/.gitignore.
+# ---------------------------------------------------------------------------
+
+# Secrets & environment (only *.example files are tracked)
+.env
+.env.*
+!.env.example
+!.env.*.example
+deploy/.env
+deploy/.env.images
+deploy/.env.images.previous
+deploy/env/*.env
+
+# Deploy state produced on the server
+deploy/.deploy-history.log
+deploy/.deploy.lock
+deploy/backups/
+
+# Dependencies & build output
+node_modules/
+vendor/
+.output/
+.nuxt/
+.nitro/
+.cache/
+dist/
+build/
+
+# Tooling caches
+.turbo/
+.eslintcache
+coverage/
+*.tsbuildinfo
+
+# Logs
+*.log
+npm-debug.log*
+yarn-error.log*
+
+# Editors & OS
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.shared.json
+.fleet/
+.DS_Store
+Thumbs.db
+
+# Local scratch
+tmp/
+.tmp/
+*.dump
+*.sql.gz

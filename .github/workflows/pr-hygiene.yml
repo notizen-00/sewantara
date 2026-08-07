@@ -1,0 +1,55 @@
+name: PR hygiene
+
+# The commit history is the change log. Enforcing Conventional Commits on the
+# PR title means every squash-merge lands as a parseable, scoped entry:
+#
+#   feat(api): tenant stock transfer endpoint
+#   fix(tenant-web): quote expiry off by one
+#   chore(deploy): pin postgres to 17.4
+
+on:
+  pull_request_target:
+    types: [opened, edited, reopened, synchronize]
+
+permissions:
+  pull-requests: read
+
+concurrency:
+  group: pr-hygiene-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  title:
+    name: Conventional PR title
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: amannn/action-semantic-pull-request@v5
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          types: |
+            feat
+            fix
+            perf
+            refactor
+            docs
+            test
+            build
+            ci
+            chore
+            revert
+          scopes: |
+            api
+            dashboard
+            tenant-web
+            landing
+            deploy
+            ci
+            docs
+            repo
+          requireScope: true
+          subjectPattern: ^(?![A-Z])(?!.*\.$).+$
+          subjectPatternError: >
+            The subject "{subject}" is invalid: start lowercase and do not end
+            with a period. Example: feat(api): add stock transfer endpoint

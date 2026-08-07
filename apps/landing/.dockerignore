@@ -1,0 +1,29 @@
+# Build output and dependencies are produced inside the image.
+node_modules
+.nuxt
+.output
+.nitro
+.data
+.cache
+dist
+
+# Secrets never enter the build context.
+.env
+.env.*
+!.env.example
+
+# Nothing below changes the built artefact.
+.git
+.github
+Dockerfile
+compose*.yaml
+compose*.yml
+*.md
+*.log
+logs
+design
+public/favicon_io.zip
+.DS_Store
+.fleet
+.idea
+.vscode

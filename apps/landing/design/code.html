@@ -1,0 +1,623 @@
+<!DOCTYPE html><html class="light" lang="id"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Sewantara - Kelola Bisnis Rental Lebih Rapi &amp; Profesional</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<style>
+        body { font-family: 'Inter', sans-serif; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(226, 232, 240, 0.8);
+        }
+        .gradient-bg {
+            background: radial-gradient(circle at top right, #fff5f6 0%, #ffffff 100%);
+        }
+    </style>
+<!-- Tailwind Theme Configuration -->
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "surface-tint": "#be123c",
+                    "background": "#fff5f6",
+                    "inverse-surface": "#2b322b",
+                    "on-surface-variant": "#4a3e3e",
+                    "outline": "#7b6c6c",
+                    "on-error-container": "#93000a",
+                    "surface-variant": "#e5dddd",
+                    "secondary": "#735c00",
+                    "on-tertiary-container": "#fffbff",
+                    "tertiary-fixed": "#ffd9de",
+                    "primary-container": "#fb7185",
+                    "on-primary-fixed-variant": "#4c0519",
+                    "on-error": "#ffffff",
+                    "tertiary": "#a72d51",
+                    "on-tertiary": "#ffffff",
+                    "on-primary": "#ffffff",
+                    "secondary-fixed-dim": "#eec200",
+                    "error": "#ba1a1a",
+                    "on-tertiary-fixed-variant": "#8a143c",
+                    "surface-bright": "#fff5f6",
+                    "on-primary-container": "#fff1f2",
+                    "primary-fixed": "#fecdd3",
+                    "inverse-primary": "#fb7185",
+                    "tertiary-container": "#c74668",
+                    "on-secondary-container": "#6f5900",
+                    "surface": "#fff5f6",
+                    "on-background": "#1d1717",
+                    "inverse-on-surface": "#f3ecec",
+                    "surface-container-highest": "#e5dddd",
+                    "on-secondary-fixed-variant": "#574500",
+                    "outline-variant": "#cababa",
+                    "secondary-fixed": "#ffe083",
+                    "tertiary-fixed-dim": "#ffb2bf",
+                    "primary-fixed-dim": "#fb7185",
+                    "on-primary-fixed": "#4c0519",
+                    "on-secondary-fixed": "#231b00",
+                    "surface-container-high": "#eae3e3",
+                    "surface-container-low": "#f6efef",
+                    "primary": "#E11D48", /* Brand Primary Updated to Red */
+                    "surface-container": "#f0e9e9",
+                    "surface-dim": "#dcd5d5",
+                    "error-container": "#ffdad6",
+                    "on-tertiary-fixed": "#3f0016",
+                    "on-surface": "#1d1717",
+                    "secondary-container": "#fed01b",
+                    "on-secondary": "#ffffff",
+                    "surface-container-lowest": "#ffffff"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "card": "20px",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "gutter": "24px",
+                    "margin-desktop": "40px",
+                    "margin-mobile": "16px",
+                    "base": "4px",
+                    "container-max": "1280px"
+            },
+            "fontFamily": {
+                    "headline-lg": ["Inter"],
+                    "label-sm": ["Inter"],
+                    "display": ["Inter"],
+                    "body-sm": ["Inter"],
+                    "body-lg": ["Inter"],
+                    "label-md": ["Inter"],
+                    "headline-md": ["Inter"],
+                    "headline-sm": ["Inter"],
+                    "body-md": ["Inter"]
+            },
+            "fontSize": {
+                    "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "700"}],
+                    "label-sm": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "500"}],
+                    "display": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "800"}],
+                    "body-sm": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                    "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                    "label-md": ["14px", {"lineHeight": "20px", "fontWeight": "500"}],
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "700"}],
+                    "headline-sm": ["20px", {"lineHeight": "28px", "fontWeight": "700"}],
+                    "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}]
+            }
+          },
+        },
+      }
+    </script>
+</head>
+<body class="bg-surface text-on-surface antialiased overflow-x-hidden">
+<!-- Navbar -->
+<nav class="bg-surface/80 backdrop-blur-md sticky top-0 z-50 border-b border-outline-variant/30 h-20 flex items-center">
+<div class="flex justify-between items-center w-full px-margin-desktop max-w-container-max mx-auto">
+<div class="flex items-center gap-12">
+<span class="text-headline-md font-extrabold text-primary tracking-tight">Sewantara</span>
+<div class="hidden md:flex gap-8">
+<a class="font-label-md text-on-surface-variant hover:text-primary transition-colors" href="#fitur">Fitur</a>
+<a class="font-label-md text-on-surface-variant hover:text-primary transition-colors" href="#manfaat">Manfaat</a>
+<a class="font-label-md text-on-surface-variant hover:text-primary transition-colors" href="#solusi">Solusi</a>
+<a class="font-label-md text-on-surface-variant hover:text-primary transition-colors" href="#harga">Harga</a>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<a class="font-label-md text-on-surface-variant px-4 py-2 hover:text-primary transition-colors" href="#">Masuk</a>
+<a class="bg-primary text-white font-label-md px-6 py-3 rounded-xl hover:shadow-lg hover:shadow-primary/20 transition-all active:scale-95" href="#">Mulai Gratis</a>
+</div>
+</div>
+</nav>
+<!-- Hero Section -->
+<section class="relative pt-20 pb-32 overflow-hidden gradient-bg">
+<div class="max-w-container-max mx-auto px-margin-desktop grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+<div class="z-10">
+<span class="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 text-primary font-label-md rounded-full mb-6">
+<span class="material-symbols-outlined text-[18px]">verified</span>
+                    Platform Manajemen Rental All-in-One
+                </span>
+<h1 class="font-display text-display text-on-surface mb-6 leading-tight">
+                    Kelola Bisnis Rental <br>Lebih <span class="text-primary">Rapi, Cepat,</span> dan <span class="text-primary">Profesional.</span>
+</h1>
+<p class="font-body-lg text-on-surface-variant mb-10 max-w-lg">
+                    Satu dashboard untuk semua kebutuhan. Dari inventory tracking hingga penagihan otomatis, Sewantara dirancang khusus untuk pertumbuhan bisnis rental Anda.
+                </p>
+<div class="flex flex-wrap gap-4">
+<button class="bg-primary text-white font-headline-sm px-8 py-4 rounded-xl hover:shadow-xl hover:shadow-primary/30 transition-all">Mulai Gratis</button>
+<button class="flex items-center gap-2 border border-outline text-on-surface font-headline-sm px-8 py-4 rounded-xl hover:bg-surface-container-low transition-all">
+<span class="material-symbols-outlined">play_circle</span>
+                        Lihat Cara Kerjanya
+                    </button>
+</div>
+<div class="mt-8 flex items-center gap-6">
+<div class="flex -space-x-3">
+<div class="w-10 h-10 rounded-full border-2 border-white bg-slate-200" data-alt="A professional headshot of a smiling Asian male business owner, clean studio lighting, soft focus background, modern SaaS aesthetic." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBDhifaLSpLrW4WP5JTRNHzWZjxLjTbc6sNvFOX7Jwor4nEdErHTyx3KE1iAkeCY91us3mMD_EQsszmdlma-523P_2OgFajHEzoJ-P-56O2zrhghTPAlGlz_RZMEDL6j5nKjStwRAZzyJqFR8zRNaJI3Jo6TaSjXrli6_PMRBDjgSGOzcGrlNpS01tTAUFq78eeRQ_yrOqjV2yfjr28bDIxThDSoDIA5ESRPe0Sycd2TH1EUQ-jaeo89g')"></div>
+<div class="w-10 h-10 rounded-full border-2 border-white bg-slate-300" data-alt="A professional headshot of a confident female entrepreneur, neutral background, sharp focus, professional and clean minimalist style." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuC59CHHnX-aAA9NnePG3qgIe-1uzlYWLZfl9Kvd6PhUzd2msPefyA5vDhkjlYU1hUaEMaeAOTfs8hAM_5jq_4Zk4ftsyQGXFCeZNkRQYq5yWbX9Uvmniy1Svqt74jBEfz7seG-amPskXEKCy_SyYd9xwRb6UdzGkr9iRQAguEDejcpDZpZak-fYR16zgmaMX0T0Mkw2I31Z9zpMUfNHm4ub2mrxbaIRfrpae0ugWkDuXRbHfvCNkZrqsg')"></div>
+<div class="w-10 h-10 rounded-full border-2 border-white bg-slate-400" data-alt="A close up of a cheerful young adult male professional, vibrant but soft lighting, modern workplace setting, high resolution photography." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuB33uCAg0vd_kzvwFhdC3FpIq4IXT7Fa31Xs2NCJwYxbhnQufmsa1WseAI38CJ7H_8ci6xc7WHhjbYQR-j72WNRkB0oPKIbMukqT63JYXB0EevkbEcqJzpLmYmb5JFWHBjv8j5LfR0p2zbUD93jhdgIYHy7NOlK0NeTNdDSF6YeUUm3N7CKCEfFv2zDrawKdvpmC1EjnYRUG8Tmznj_TEWfEhHfIMYpA1X8IYn1R-khCUsqutheFJ2hmA')"></div>
+</div>
+<p class="font-label-sm text-on-surface-variant">Bergabung dengan 500+ pemilik bisnis rental</p>
+</div>
+</div>
+<div class="relative lg:h-[600px] flex items-center">
+<!-- Dashboard Mockup Canvas -->
+<div class="w-full h-full glass-card rounded-card shadow-2xl overflow-hidden p-6 border border-outline-variant/50">
+<div class="flex items-center justify-between mb-8">
+<div class="flex gap-2">
+<div class="w-3 h-3 rounded-full bg-red-400"></div>
+<div class="w-3 h-3 rounded-full bg-yellow-400"></div>
+<div class="w-3 h-3 rounded-full bg-green-400"></div>
+</div>
+<div class="bg-surface-container px-3 py-1 rounded text-[10px] font-mono text-outline">sewantara-dashboard-v1.1</div>
+</div>
+<div class="grid grid-cols-3 gap-4 mb-6">
+<div class="bg-primary/5 p-4 rounded-xl border border-primary/10">
+<p class="font-label-sm text-on-surface-variant">Pendapatan Hari Ini</p>
+<p class="font-headline-sm text-primary">Rp 4.500.000</p>
+</div>
+<div class="bg-surface-container-low p-4 rounded-xl border border-outline-variant/30">
+<p class="font-label-sm text-on-surface-variant">Booking Aktif</p>
+<p class="font-headline-sm text-on-surface">12 Unit</p>
+</div>
+<div class="bg-surface-container-low p-4 rounded-xl border border-outline-variant/30">
+<p class="font-label-sm text-on-surface-variant">Stok Tersedia</p>
+<p class="font-headline-sm text-on-surface">85%</p>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-4 h-[300px]">
+<div class="bg-white rounded-xl border border-outline-variant/30 p-4">
+<p class="font-label-md text-on-surface font-bold mb-4">Grafik Mingguan</p>
+<div class="flex items-end gap-2 h-40">
+<div class="bg-primary/20 w-full h-[40%] rounded-t-sm"></div>
+<div class="bg-primary/40 w-full h-[60%] rounded-t-sm"></div>
+<div class="bg-primary w-full h-[85%] rounded-t-sm"></div>
+<div class="bg-primary/30 w-full h-[50%] rounded-t-sm"></div>
+<div class="bg-primary/60 w-full h-[70%] rounded-t-sm"></div>
+</div>
+</div>
+<div class="bg-white rounded-xl border border-outline-variant/30 p-4">
+<p class="font-label-md text-on-surface font-bold mb-4">Kalender Booking</p>
+<div class="grid grid-cols-7 gap-1 text-[10px] text-center">
+<div class="">S</div><div class="">S</div><div class="">R</div><div class="">K</div><div class="">J</div><div class="">S</div><div class="">M</div>
+<div class="p-1 opacity-20">28</div><div class="p-1 opacity-20">29</div><div class="p-1">1</div><div class="p-1 bg-primary text-white rounded-sm">2</div><div class="p-1 bg-primary/20">3</div><div class="p-1">4</div><div class="p-1">5</div>
+<div class="p-1">6</div><div class="p-1">7</div><div class="p-1">8</div><div class="p-1">9</div><div class="p-1 bg-primary/20">10</div><div class="p-1 bg-primary/20">11</div><div class="p-1">12</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Problems Section -->
+<section class="py-24 bg-white">
+<div class="max-w-container-max mx-auto px-margin-desktop">
+<div class="text-center mb-16">
+<h2 class="font-headline-lg text-on-surface mb-4">Masih Mengelola Rental dengan Cara Manual?</h2>
+<p class="font-body-md text-on-surface-variant">Hentikan kerugian akibat manajemen yang berantakan.</p>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+<div class="p-8 rounded-card border border-outline-variant/30 bg-surface-container-lowest hover:border-primary/30 transition-all group">
+<span class="material-symbols-outlined text-4xl text-primary mb-4 group-hover:scale-110 transition-transform">event_busy</span>
+<h3 class="font-headline-sm text-on-surface mb-3">Booking Bentrok</h3>
+<p class="font-body-md text-on-surface-variant">Satu barang disewa dua orang di waktu yang sama? Reputasi Anda taruhannya.</p>
+</div>
+<div class="p-8 rounded-card border border-outline-variant/30 bg-surface-container-lowest hover:border-primary/30 transition-all group">
+<span class="material-symbols-outlined text-4xl text-primary mb-4 group-hover:scale-110 transition-transform">inventory_2</span>
+<h3 class="font-headline-sm text-on-surface mb-3">Sulit Cek Ketersediaan</h3>
+<p class="font-body-md text-on-surface-variant">Harus bolak-balik cek gudang atau buku catatan hanya untuk menjawab pertanyaan pelanggan.</p>
+</div>
+<div class="p-8 rounded-card border border-outline-variant/30 bg-surface-container-lowest hover:border-primary/30 transition-all group">
+<span class="material-symbols-outlined text-4xl text-primary mb-4 group-hover:scale-110 transition-transform">analytics</span>
+<h3 class="font-headline-sm text-on-surface mb-3">Laporan Tidak Akurat</h3>
+<p class="font-body-md text-on-surface-variant">Lupa mencatat pengeluaran atau denda? Uang menguap begitu saja tanpa jejak.</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Benefits Section -->
+<section class="py-24 bg-surface-container-low" id="manfaat">
+<div class="max-w-container-max mx-auto px-margin-desktop grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+<div class="relative rounded-card overflow-hidden h-[500px] shadow-2xl">
+<div class="absolute inset-0 bg-cover bg-center" data-alt="A bright, modern rental business warehouse with organized shelves and a smiling staff member holding a tablet with the Sewantara app open. The environment is professional, well-lit, and clean, representing efficiency and organization in a red and white color palette." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBqMdMjxmZA9T6I-49g8CxJuC0iAL8XDX3g9vvM4L9pdTaKSgPjjKAs4pOx-Uhs3fcg97cRix9ThkhT8iDiM0k-A4KQMqAG-WzEUjIFZZUFScKXoW8EhHUEU3L0EKPZyg4Llx78uGneYWAOwmo7SjEiTccnlCiaNn4-8dw61-CHsZST4MtfdxuND6XIcOzZlHSIPN0RkvnPa2UYP2GLxJNg0XKrSCucDq08er78z6R3UzejOvGlfOI8WQ')"></div>
+<div class="absolute bottom-6 left-6 right-6 p-6 glass-card rounded-xl">
+<p class="font-body-md text-on-surface font-bold italic">"Sejak pakai Sewantara, saya bisa mengurus 3 cabang sekaligus dari rumah. Benar-benar penghemat waktu!"</p>
+<p class="font-label-sm text-primary mt-4">— Andi, Owner SewaMobil Pro</p>
+</div>
+</div>
+<div>
+<h2 class="font-headline-lg text-on-surface mb-6">Lebih Sedikit Pekerjaan Manual, Lebih Banyak Waktu Mengembangkan Bisnis</h2>
+<ul class="space-y-6">
+<li class="flex gap-4">
+<div class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-primary">bolt</span>
+</div>
+<div>
+<p class="font-headline-sm text-on-surface mb-1">Otomatisasi Alur Kerja</p>
+<p class="font-body-md text-on-surface-variant">Invoice, pengingat denda, hingga notifikasi ketersediaan dikirim otomatis.</p>
+</div>
+</li>
+<li class="flex gap-4">
+<div class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-primary">security</span>
+</div>
+<div>
+<p class="font-headline-sm text-on-surface mb-1">Keamanan Data Terjamin</p>
+<p class="font-body-md text-on-surface-variant">Data pelanggan dan riwayat transaksi aman tersimpan di cloud terenkripsi.</p>
+</div>
+</li>
+<li class="flex gap-4">
+<div class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-primary">trending_up</span>
+</div>
+<div>
+<p class="font-headline-sm text-on-surface mb-1">Keputusan Berbasis Data</p>
+<p class="font-body-md text-on-surface-variant">Tahu barang mana yang paling laku dan kapan waktu tersibuk bisnis Anda.</p>
+</div>
+</li>
+</ul>
+</div>
+</div>
+</section>
+<!-- Core Features Grid -->
+<section class="py-24 bg-white" id="fitur">
+<div class="max-w-container-max mx-auto px-margin-desktop">
+<div class="text-center mb-16">
+<h2 class="font-headline-lg text-on-surface">Fitur Utama untuk Skalabilitas</h2>
+<p class="font-body-md text-on-surface-variant mt-4">Apapun yang Anda rentalkan, kami punya alatnya.</p>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+<!-- Grid Items -->
+<div class="p-6 rounded-card border border-outline-variant/30 hover:shadow-lg transition-shadow">
+<span class="material-symbols-outlined text-primary text-3xl mb-4">inventory</span>
+<h4 class="font-headline-sm text-on-surface mb-2">Inventory Management</h4>
+<p class="font-body-sm text-on-surface-variant">Pantau status barang secara real-time di semua cabang.</p>
+</div>
+<div class="p-6 rounded-card border border-outline-variant/30 hover:shadow-lg transition-shadow">
+<span class="material-symbols-outlined text-primary text-3xl mb-4">calendar_month</span>
+<h4 class="font-headline-sm text-on-surface mb-2">Smart Booking</h4>
+<p class="font-body-sm text-on-surface-variant">Kalender interaktif untuk manajemen jadwal sewa tanpa bentrok.</p>
+</div>
+<div class="p-6 rounded-card border border-outline-variant/30 hover:shadow-lg transition-shadow">
+<span class="material-symbols-outlined text-primary text-3xl mb-4">groups</span>
+<h4 class="font-headline-sm text-on-surface mb-2">Customer Database</h4>
+<p class="font-body-sm text-on-surface-variant">Simpan riwayat sewa dan blacklist pelanggan bermasalah.</p>
+</div>
+<div class="p-6 rounded-card border border-outline-variant/30 hover:shadow-lg transition-shadow">
+<span class="material-symbols-outlined text-primary text-3xl mb-4">payments</span>
+<h4 class="font-headline-sm text-on-surface mb-2">Payment Integration</h4>
+<p class="font-body-sm text-on-surface-variant">Terima pembayaran via Transfer, E-Wallet, atau VA otomatis.</p>
+</div>
+<div class="p-6 rounded-card border border-outline-variant/30 hover:shadow-lg transition-shadow">
+<span class="material-symbols-outlined text-primary text-3xl mb-4">badge</span>
+<h4 class="font-headline-sm text-on-surface mb-2">Staff Management</h4>
+<p class="font-body-sm text-on-surface-variant">Atur hak akses staf berbeda-beda untuk keamanan operasional.</p>
+</div>
+<div class="p-6 rounded-card border border-outline-variant/30 hover:shadow-lg transition-shadow">
+<span class="material-symbols-outlined text-primary text-3xl mb-4">account_tree</span>
+<h4 class="font-headline-sm text-on-surface mb-2">Multi-Branch Support</h4>
+<p class="font-body-sm text-on-surface-variant">Satu akun untuk mengelola banyak lokasi bisnis sekaligus.</p>
+</div>
+<div class="p-6 rounded-card border border-outline-variant/30 hover:shadow-lg transition-shadow">
+<span class="material-symbols-outlined text-primary text-3xl mb-4">description</span>
+<h4 class="font-headline-sm text-on-surface mb-2">Financial Reports</h4>
+<p class="font-body-sm text-on-surface-variant">Laporan laba rugi instan yang bisa diunduh ke Excel/PDF.</p>
+</div>
+<div class="p-6 rounded-card border border-outline-variant/30 hover:shadow-lg transition-shadow">
+<span class="material-symbols-outlined text-primary text-3xl mb-4">notifications_active</span>
+<h4 class="font-headline-sm text-on-surface mb-2">Auto Notifications</h4>
+<p class="font-body-sm text-on-surface-variant">WA Blast otomatis untuk pengingat pengembalian barang.</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Inventory Models -->
+<section class="py-24 bg-surface-container-low">
+<div class="max-w-container-max mx-auto px-margin-desktop">
+<h2 class="font-headline-lg text-on-surface text-center mb-16">Dukungan Berbagai Model Inventory</h2>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-12">
+<!-- Serialized -->
+<div class="bg-white p-10 rounded-card shadow-sm border border-outline-variant/20">
+<div class="flex items-center gap-4 mb-6">
+<div class="p-3 bg-primary/10 rounded-xl">
+<span class="material-symbols-outlined text-primary">qr_code_2</span>
+</div>
+<h3 class="font-headline-sm text-on-surface">Serialized Inventory</h3>
+</div>
+<p class="font-body-md text-on-surface-variant mb-8">Setiap unit memiliki identitas unik (Plat Nomor, Serial Number, IMEI). Cocok untuk:</p>
+<div class="grid grid-cols-2 gap-4">
+<div class="flex items-center gap-3 p-3 bg-surface rounded-lg">
+<span class="material-symbols-outlined text-primary">directions_car</span>
+<span class="font-label-md">Mobil/Motor</span>
+</div>
+<div class="flex items-center gap-3 p-3 bg-surface rounded-lg">
+<span class="material-symbols-outlined text-primary">sports_esports</span>
+<span class="font-label-md">Playstation</span>
+</div>
+<div class="flex items-center gap-3 p-3 bg-surface rounded-lg">
+<span class="material-symbols-outlined text-primary">camera_alt</span>
+<span class="font-label-md">Kamera</span>
+</div>
+<div class="flex items-center gap-3 p-3 bg-surface rounded-lg">
+<span class="material-symbols-outlined text-primary">home_work</span>
+<span class="font-label-md">Apartemen</span>
+</div>
+</div>
+</div>
+<!-- Quantity-based -->
+<div class="bg-white p-10 rounded-card shadow-sm border border-outline-variant/20">
+<div class="flex items-center gap-4 mb-6">
+<div class="p-3 bg-primary/10 rounded-xl">
+<span class="material-symbols-outlined text-primary">layers</span>
+</div>
+<h3 class="font-headline-sm text-on-surface">Quantity-based Inventory</h3>
+</div>
+<p class="font-body-md text-on-surface-variant mb-8">Dikelola berdasarkan jumlah stok massal tanpa identitas unik per unit. Cocok untuk:</p>
+<div class="grid grid-cols-2 gap-4">
+<div class="flex items-center gap-3 p-3 bg-surface rounded-lg">
+<span class="material-symbols-outlined text-primary">chair</span>
+<span class="font-label-md">Kursi/Meja</span>
+</div>
+<div class="flex items-center gap-3 p-3 bg-surface rounded-lg">
+<span class="material-symbols-outlined text-primary">holiday_village</span>
+<span class="font-label-md">Tenda/Alat Camp</span>
+</div>
+<div class="flex items-center gap-3 p-3 bg-surface rounded-lg">
+<span class="material-symbols-outlined text-primary">restaurant</span>
+<span class="font-label-md">Alat Catering</span>
+</div>
+<div class="flex items-center gap-3 p-3 bg-surface rounded-lg">
+<span class="material-symbols-outlined text-primary">checkroom</span>
+<span class="font-label-md">Baju/Kostum</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Tenant Website Feature -->
+<section class="py-24 bg-primary text-white overflow-hidden">
+<div class="max-w-container-max mx-auto px-margin-desktop grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+<div>
+<h2 class="font-display text-display mb-6">Go Digital dengan Website Booking &amp; Payment Otomatis</h2>
+<p class="font-body-lg text-primary-fixed mb-10">
+                    Tingkatkan kredibilitas bisnis Anda. Pelanggan bisa cek ketersediaan dan booking langsung melalui website profesional dengan domain kustom Anda.
+                </p>
+<div class="bg-white/10 p-6 rounded-xl border border-white/20 mb-8 inline-block">
+<p class="font-mono text-headline-sm">namarental.sewantara.id</p>
+</div>
+<div class="space-y-6 mb-8"><div class="flex items-start gap-4"><div class="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center shrink-0"><span class="material-symbols-outlined text-white">schedule</span></div><div><p class="font-headline-sm text-white">Pesan Online 24/7</p><p class="font-body-md text-primary-fixed">Memudahkan customer melakukan booking kapan saja tanpa perlu chat manual.</p></div></div><div class="flex items-start gap-4"><div class="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center shrink-0"><span class="material-symbols-outlined text-white">account_balance_wallet</span></div><div><p class="font-headline-sm text-white">Payment Gateway Terintegrasi</p><p class="font-body-md text-primary-fixed">Terima pembayaran otomatis via Transfer, E-Wallet, atau VA dengan konfirmasi instan.</p></div></div><div class="flex flex-wrap gap-6 pt-4 border-t border-white/20"><div class="flex items-center gap-2"><span class="material-symbols-outlined text-sm">check_circle</span><span class="font-label-md">SEO Optimized</span></div><div class="flex items-center gap-2"><span class="material-symbols-outlined text-sm">check_circle</span><span class="font-label-md">Mobile Friendly</span></div><div class="flex items-center gap-2"><span class="material-symbols-outlined text-sm">check_circle</span><span class="font-label-md">Direct WhatsApp</span></div></div></div>
+</div>
+<div class="relative">
+<!-- Website Preview Mockup -->
+<div class="bg-white rounded-t-2xl shadow-2xl p-4 pb-0 -mb-24 h-[400px]">
+<div class="bg-surface-container-low rounded-t-xl h-full p-6">
+<div class="flex items-center justify-between mb-8">
+<div class="w-24 h-6 bg-primary/20 rounded"></div>
+<div class="flex gap-4">
+<div class="w-12 h-2 bg-outline-variant rounded"></div>
+<div class="w-12 h-2 bg-outline-variant rounded"></div>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-4">
+<div class="aspect-video bg-white/50 rounded-lg shadow-sm border border-primary/10"></div>
+<div class="aspect-video bg-white/50 rounded-lg shadow-sm border border-primary/10"></div>
+<div class="aspect-video bg-white/50 rounded-lg shadow-sm border border-primary/10"></div>
+<div class="aspect-video bg-white/50 rounded-lg shadow-sm border border-primary/10"></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Pricing Section -->
+<section class="py-24 bg-white" id="harga">
+<div class="max-w-container-max mx-auto px-margin-desktop">
+<div class="text-center mb-16">
+<h2 class="font-headline-lg text-on-surface">Pilih Paket Sesuai Kebutuhan</h2>
+<div class="mt-8 flex items-center justify-center gap-4">
+<span class="font-label-md">Bulanan</span>
+<button class="w-14 h-8 bg-primary/20 rounded-full relative p-1 transition-colors" onclick="this.classList.toggle('bg-primary'); this.children[0].classList.toggle('translate-x-6')">
+<div class="w-6 h-6 bg-white rounded-full transition-transform"></div>
+</button>
+<span class="font-label-md">Tahunan <span class="text-primary font-bold">(Hemat 20%)</span></span>
+</div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+<!-- Starter -->
+<div class="p-10 rounded-card border border-outline-variant/30 bg-surface flex flex-col">
+<h3 class="font-headline-sm text-on-surface">Starter</h3>
+<div class="my-6">
+<span class="text-display font-display">99rb</span>
+<span class="text-on-surface-variant font-body-md">/ bulan</span>
+</div>
+<p class="font-body-sm text-on-surface-variant mb-8">Cocok untuk bisnis rental baru memulai.</p>
+<ul class="space-y-4 mb-10 flex-grow">
+<li class="flex items-center gap-3"><span class="material-symbols-outlined text-primary">check</span> <span class="font-body-md">Maks. 50 Item</span></li>
+<li class="flex items-center gap-3"><span class="material-symbols-outlined text-primary">check</span> <span class="font-body-md">1 Akun Staff</span></li>
+<li class="flex items-center gap-3"><span class="material-symbols-outlined text-primary">check</span> <span class="font-body-md">Website Booking Dasar</span></li>
+<li class="flex items-center gap-3 text-on-surface-variant/50"><span class="material-symbols-outlined">close</span> <span class="font-body-md">Multi Cabang</span></li>
+</ul>
+<button class="w-full py-4 rounded-xl border border-primary text-primary font-headline-sm hover:bg-primary/5 transition-all">Pilih Paket</button>
+</div>
+<!-- Growth -->
+<div class="p-10 rounded-card border-2 border-primary bg-white shadow-xl relative flex flex-col">
+<div class="absolute -top-4 left-1/2 -translate-x-1/2 bg-primary text-white px-4 py-1 rounded-full text-xs font-bold uppercase tracking-wider">Paling Populer</div>
+<h3 class="font-headline-sm text-on-surface">Growth</h3>
+<div class="my-6">
+<span class="text-display font-display text-primary">249rb</span>
+<span class="text-on-surface-variant font-body-md">/ bulan</span>
+</div>
+<p class="font-body-sm text-on-surface-variant mb-8">Paket ideal untuk bisnis yang sedang berkembang.</p>
+<ul class="space-y-4 mb-10 flex-grow">
+<li class="flex items-center gap-3"><span class="material-symbols-outlined text-primary">check</span> <span class="font-body-md">Maks. 500 Item</span></li>
+<li class="flex items-center gap-3"><span class="material-symbols-outlined text-primary">check</span> <span class="font-body-md">5 Akun Staff</span></li>
+<li class="flex items-center gap-3"><span class="material-symbols-outlined text-primary">check</span> <span class="font-body-md">Website Booking Premium</span></li>
+<li class="flex items-center gap-3"><span class="material-symbols-outlined text-primary">check</span> <span class="font-body-md">Integrasi Pembayaran VA</span></li>
+</ul>
+<button class="w-full py-4 rounded-xl bg-primary text-white font-headline-sm hover:shadow-lg transition-all">Pilih Paket</button>
+</div>
+<!-- Business -->
+<div class="p-10 rounded-card border border-outline-variant/30 bg-surface flex flex-col">
+<h3 class="font-headline-sm text-on-surface">Business</h3>
+<div class="my-6">
+<span class="text-display font-display">499rb</span>
+<span class="text-on-surface-variant font-body-md">/ bulan</span>
+</div>
+<p class="font-body-sm text-on-surface-variant mb-8">Solusi lengkap untuk skala korporasi.</p>
+<ul class="space-y-4 mb-10 flex-grow">
+<li class="flex items-center gap-3"><span class="material-symbols-outlined text-primary">check</span> <span class="font-body-md">Unlimited Item</span></li>
+<li class="flex items-center gap-3"><span class="material-symbols-outlined text-primary">check</span> <span class="font-body-md">Unlimited Staff</span></li>
+<li class="flex items-center gap-3"><span class="material-symbols-outlined text-primary">check</span> <span class="font-body-md">Multi Cabang Terintegrasi</span></li>
+<li class="flex items-center gap-3"><span class="material-symbols-outlined text-primary">check</span> <span class="font-body-md">Custom Domain &amp; Branding</span></li>
+</ul>
+<button class="w-full py-4 rounded-xl border border-primary text-primary font-headline-sm hover:bg-primary/5 transition-all">Hubungi Sales</button>
+</div>
+</div>
+</div>
+</section>
+<!-- FAQ -->
+<section class="py-24 bg-surface-container-low">
+<div class="max-w-3xl mx-auto px-margin-mobile md:px-0">
+<h2 class="font-headline-lg text-on-surface text-center mb-16">Pertanyaan Umum</h2>
+<div class="space-y-4">
+<div class="bg-white rounded-xl border border-outline-variant/30 overflow-hidden">
+<button class="w-full px-6 py-5 text-left flex justify-between items-center group" onclick="this.nextElementSibling.classList.toggle('hidden')">
+<span class="font-headline-sm">Apakah ada biaya tambahan per transaksi?</span>
+<span class="material-symbols-outlined transition-transform group-active:rotate-180">expand_more</span>
+</button>
+<div class="px-6 pb-5 font-body-md text-on-surface-variant">Tidak ada. Kami menggunakan sistem berlangganan bulanan flat. Biaya transaksi hanya berlaku jika Anda menggunakan fitur Payment Gateway melalui mitra kami.</div>
+</div>
+<div class="bg-white rounded-xl border border-outline-variant/30 overflow-hidden">
+<button class="w-full px-6 py-5 text-left flex justify-between items-center group" onclick="this.nextElementSibling.classList.toggle('hidden')">
+<span class="font-headline-sm">Dapatkah saya migrasi data dari Excel?</span>
+<span class="material-symbols-outlined">expand_more</span>
+</button>
+<div class="px-6 pb-5 font-body-md text-on-surface-variant hidden">Tentu saja! Kami menyediakan template import Excel untuk memudahkan Anda memindahkan data inventory dan pelanggan ke sistem Sewantara.</div>
+</div>
+<div class="bg-white rounded-xl border border-outline-variant/30 overflow-hidden">
+<button class="w-full px-6 py-5 text-left flex justify-between items-center group" onclick="this.nextElementSibling.classList.toggle('hidden')">
+<span class="font-headline-sm">Apakah aman menyimpan data pelanggan di sini?</span>
+<span class="material-symbols-outlined">expand_more</span>
+</button>
+<div class="px-6 pb-5 font-body-md text-on-surface-variant hidden">Sangat aman. Kami menggunakan enkripsi SSL tingkat bank dan backup harian untuk memastikan data bisnis Anda selalu tersedia dan terlindungi.</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Final CTA -->
+<section class="py-32 relative overflow-hidden bg-on-surface text-white">
+<div class="absolute inset-0 opacity-10">
+</div>
+<div class="relative z-10 max-w-container-max mx-auto px-margin-desktop text-center">
+<h2 class="font-display text-display mb-8">Siap Membuat Bisnis Rental Anda <br>Lebih Terorganisir?</h2>
+<p class="font-body-lg text-surface-variant mb-12 max-w-2xl mx-auto">Mulai perjalanan efisiensi Anda hari ini. Tidak butuh kartu kredit untuk mencoba.</p>
+<div class="flex flex-col md:flex-row items-center justify-center gap-6">
+<button class="bg-primary text-white font-headline-sm px-12 py-5 rounded-xl hover:scale-105 transition-transform">Mulai Gratis Sekarang</button>
+<button class="border border-outline-variant text-white font-headline-sm px-12 py-5 rounded-xl hover:bg-white/5 transition-all">Jadwalkan Demo</button>
+</div>
+</div>
+</section>
+<!-- Footer -->
+<footer class="bg-surface-container-low border-t border-outline-variant py-16">
+<div class="max-w-container-max mx-auto px-margin-desktop">
+<div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-gutter">
+<div class="col-span-2">
+<span class="text-headline-sm font-bold text-primary block mb-6">Sewantara</span>
+<p class="font-body-sm text-on-surface-variant max-w-xs">Solusi manajemen bisnis rental tercanggih di Indonesia. Membantu UMKM hingga perusahaan besar mengelola aset mereka dengan lebih baik.</p>
+</div>
+<div>
+<h5 class="font-label-md text-on-surface font-bold mb-6">Produk</h5>
+<ul class="space-y-4 font-body-sm text-on-surface-variant">
+<li class=""><a class="hover:text-primary transition-colors" href="#">Fitur</a></li>
+<li class=""><a class="hover:text-primary transition-colors" href="#">Harga</a></li>
+<li class=""><a class="hover:text-primary transition-colors" href="#">Update</a></li>
+</ul>
+</div>
+<div>
+<h5 class="font-label-md text-on-surface font-bold mb-6">Perusahaan</h5>
+<ul class="space-y-4 font-body-sm text-on-surface-variant">
+<li class=""><a class="hover:text-primary transition-colors" href="#">Tentang Kami</a></li>
+<li class=""><a class="hover:text-primary transition-colors" href="#">Karir</a></li>
+<li class=""><a class="hover:text-primary transition-colors" href="#">Blog</a></li>
+</ul>
+</div>
+<div>
+<h5 class="font-label-md text-on-surface font-bold mb-6">Bantuan</h5>
+<ul class="space-y-4 font-body-sm text-on-surface-variant">
+<li class=""><a class="hover:text-primary transition-colors" href="#">Pusat Bantuan</a></li>
+<li class=""><a class="hover:text-primary transition-colors" href="#">FAQ</a></li>
+<li class=""><a class="hover:text-primary transition-colors" href="#">Kontak</a></li>
+</ul>
+</div>
+<div>
+<h5 class="font-label-md text-on-surface font-bold mb-6">Legal</h5>
+<ul class="space-y-4 font-body-sm text-on-surface-variant">
+<li class=""><a class="hover:text-primary transition-colors" href="#">Kebijakan Privasi</a></li>
+<li class=""><a class="hover:text-primary transition-colors" href="#">Syarat &amp; Ketentuan</a></li>
+</ul>
+</div>
+</div>
+<div class="mt-16 pt-8 border-t border-outline-variant/30 flex flex-col md:flex-row justify-between items-center gap-6">
+<p class="font-body-sm text-on-surface-variant">© 2024 Sewantara. All rights reserved.</p>
+<div class="flex gap-6">
+<a class="text-on-surface-variant hover:text-primary" href="#"><span class="material-symbols-outlined">qr_code_2</span></a>
+<a class="text-on-surface-variant hover:text-primary" href="#"><span class="material-symbols-outlined">share</span></a>
+<a class="text-on-surface-variant hover:text-primary" href="#"><span class="material-symbols-outlined">mail</span></a>
+</div>
+</div>
+</div>
+</footer>
+<script>
+        // Simple Micro-interactions
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                document.querySelector(this.getAttribute('href')).scrollIntoView({
+                    behavior: 'smooth'
+                });
+            });
+        });
+
+        // Sticky Navbar Reveal
+        let lastScrollTop = 0;
+        const navbar = document.querySelector('nav');
+        window.addEventListener('scroll', function() {
+            let scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+            if (scrollTop > lastScrollTop) {
+                navbar.style.transform = 'translateY(-100%)';
+            } else {
+                navbar.style.transform = 'translateY(0)';
+            }
+            navbar.style.transition = 'transform 0.3s ease-in-out';
+            lastScrollTop = scrollTop;
+        });
+    </script>
+
+
+</body></html>

@@ -1,0 +1,159 @@
+name: Reusable / Deploy
+
+# Rolls a set of apps out to one host over SSH. The host never builds anything:
+# it checks out the exact commit being deployed (so deploy/ matches the release)
+# and pulls the pre-built images from GHCR by tag.
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        description: GitHub Environment name (staging | production).
+        type: string
+        required: true
+      ref:
+        description: Git ref (sha or tag) the host should check out.
+        type: string
+        required: true
+      tag:
+        description: Image tag to roll out, e.g. sha-<sha> or 1.4.0.
+        type: string
+        required: true
+      apps:
+        description: Space separated app names, e.g. "api landing".
+        type: string
+        required: true
+      run-migrations:
+        description: Run API migrations and the idempotent EngineSeeder.
+        type: boolean
+        required: false
+        default: true
+    # The public URLs are NOT inputs: they are environment-scoped GitHub
+    # variables (vars.HEALTH_URL, vars.PUBLIC_URL), read directly by the job
+    # below. Each environment therefore carries its own values and callers
+    # cannot accidentally point production at a staging URL.
+    secrets:
+      SSH_HOST:
+        required: true
+      SSH_USER:
+        required: true
+      SSH_PRIVATE_KEY:
+        required: true
+      SSH_PORT:
+        required: false
+      DEPLOY_PATH:
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    name: ${{ inputs.environment }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment:
+      name: ${{ inputs.environment }}
+      url: ${{ vars.PUBLIC_URL }}
+    permissions:
+      contents: read
+      packages: read
+
+    steps:
+      - name: Guard inputs
+        env:
+          APPS: ${{ inputs.apps }}
+          TAG: ${{ inputs.tag }}
+        run: |
+          set -euo pipefail
+          if [ -z "${APPS// /}" ]; then
+            echo '::error::no apps to deploy'; exit 1
+          fi
+          if [ -z "${TAG}" ]; then
+            echo '::error::no image tag supplied'; exit 1
+          fi
+          for app in ${APPS}; do
+            case "${app}" in
+              api|dashboard|tenant-web|landing) ;;
+              *) echo "::error::unknown app '${app}'"; exit 1 ;;
+            esac
+          done
+
+      - name: Roll out over SSH
+        uses: appleboy/ssh-action@v1
+        env:
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+          DEPLOY_REF: ${{ inputs.ref }}
+          DEPLOY_ENV: ${{ inputs.environment }}
+          IMAGE_TAG: ${{ inputs.tag }}
+          APPS: ${{ inputs.apps }}
+          RUN_MIGRATIONS: ${{ inputs.run-migrations }}
+          ACTOR: ${{ github.actor }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          GHCR_USER: ${{ github.actor }}
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          port: ${{ secrets.SSH_PORT || 22 }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          command_timeout: 25m
+          envs: DEPLOY_PATH,DEPLOY_REF,DEPLOY_ENV,IMAGE_TAG,APPS,RUN_MIGRATIONS,ACTOR,RUN_URL,GHCR_USER,GHCR_TOKEN
+          script_stop: true
+          script: |
+            set -euo pipefail
+            cd "${DEPLOY_PATH}"
+
+            # Detached checkout of the exact commit being shipped: the compose
+            # file and scripts on the host always match the running images.
+            git fetch --prune --tags origin
+            git checkout -f "${DEPLOY_REF}"
+
+            chmod +x deploy/scripts/*.sh
+            MIGRATE_FLAG=''
+            if [ "${RUN_MIGRATIONS}" != 'true' ]; then MIGRATE_FLAG='--no-migrate'; fi
+
+            ./deploy/scripts/deploy.sh \
+              --tag "${IMAGE_TAG}" \
+              --actor "${ACTOR}" \
+              --ref "${DEPLOY_REF}" \
+              --run-url "${RUN_URL}" \
+              ${MIGRATE_FLAG} \
+              ${APPS}
+
+      - name: Poll public health endpoint
+        if: vars.HEALTH_URL != ''
+        env:
+          URL: ${{ vars.HEALTH_URL }}
+        run: |
+          set -euo pipefail
+          for attempt in $(seq 1 20); do
+            code="$(curl -fsS -o /dev/null -w '%{http_code}' --max-time 10 "${URL}" || true)"
+            if [ "${code}" = '200' ]; then
+              echo "health OK after ${attempt} attempt(s)"; exit 0
+            fi
+            echo "attempt ${attempt}: HTTP ${code:-none}"
+            sleep 6
+          done
+          echo "::error::${URL} never returned 200"
+          exit 1
+
+      - name: Summarise
+        if: always()
+        env:
+          ENVIRONMENT: ${{ inputs.environment }}
+          REF: ${{ inputs.ref }}
+          TAG: ${{ inputs.tag }}
+          APPS: ${{ inputs.apps }}
+          RESULT: ${{ job.status }}
+        run: |
+          {
+            echo "### Deploy → ${ENVIRONMENT}"
+            echo
+            echo "| field | value |"
+            echo "| --- | --- |"
+            echo "| result | \`${RESULT}\` |"
+            echo "| apps | \`${APPS}\` |"
+            echo "| image tag | \`${TAG}\` |"
+            echo "| commit / tag | \`${REF}\` |"
+          } >>"${GITHUB_STEP_SUMMARY}"

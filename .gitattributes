@@ -1,0 +1,36 @@
+# Normalise line endings so Windows (Laragon) and Linux (CI/server) agree.
+* text=auto eol=lf
+
+# Files that must keep LF or they break inside containers.
+*.sh            text eol=lf
+Dockerfile      text eol=lf
+Dockerfile.*    text eol=lf
+Makefile        text eol=lf
+*.yml           text eol=lf
+*.yaml          text eol=lf
+.env.example    text eol=lf
+*.env.example   text eol=lf
+
+# Windows-only helpers.
+*.ps1           text eol=crlf
+*.cmd           text eol=crlf
+*.bat           text eol=crlf
+
+# Binary assets.
+*.png           binary
+*.jpg           binary
+*.jpeg          binary
+*.gif           binary
+*.webp          binary
+*.ico           binary
+*.woff          binary
+*.woff2         binary
+*.pdf           binary
+
+# Keep generated lockfiles out of diff noise but still versioned.
+package-lock.json   -diff linguist-generated=true
+composer.lock       -diff linguist-generated=true
+
+# Mark vendored/doc paths so GitHub language stats stay meaningful.
+docs/**            linguist-documentation=true
+apps/*/docs/**     linguist-documentation=true

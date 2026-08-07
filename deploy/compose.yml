@@ -1,0 +1,334 @@
+# Sewantara production stack — single host, Docker Compose.
+#
+# This file NEVER builds. Images are built once in CI and pulled here by tag,
+# so what runs in production is byte-identical to what CI tested. Local
+# full-stack builds live in compose.build.yml.
+#
+# Run it through the scripts, not by hand:
+#   deploy/scripts/deploy.sh --tag <tag> api dashboard tenant-web landing
+#   deploy/scripts/status.sh
+#
+# Raw compose invocation needs both env files (compose only auto-loads `.env`):
+#   docker compose --env-file .env --env-file .env.images ps
+#
+# Requires Docker Compose v2.24+ (multiple --env-file support).
+
+name: ${COMPOSE_PROJECT_NAME:-sewantara}
+
+# ---------------------------------------------------------------------------
+# Shared fragments
+# ---------------------------------------------------------------------------
+
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: 10m
+    max-file: '3'
+
+x-hardening: &hardening
+  init: true
+  restart: unless-stopped
+  security_opt:
+    - no-new-privileges:true
+  logging: *logging
+
+# Every Laravel process (fpm, queue, scheduler, reverb, migrate) is the same
+# image with a different command — that is the whole point of one API image.
+x-api: &api
+  image: ${REGISTRY}/sewantara-api:${API_IMAGE_TAG}
+  env_file:
+    - ./env/api.env
+  environment:
+    TZ: ${TZ:-Asia/Jakarta}
+  volumes:
+    - api_storage:/var/www/html/storage
+  networks: [backend]
+  init: true
+  restart: unless-stopped
+  logging: *logging
+
+x-nuxt-env: &nuxt-env
+  NODE_ENV: production
+  TZ: ${TZ:-Asia/Jakarta}
+
+services:
+  # -------------------------------------------------------------------------
+  # Data stores — internal network only unless explicitly published
+  # -------------------------------------------------------------------------
+
+  postgres:
+    <<: *hardening
+    # Pinned to the major only: PGDATA is not forward compatible across majors,
+    # so a major bump must be a deliberate, dump-and-restore change.
+    image: postgres:17-alpine
+    # POSTGRES_DB / POSTGRES_USER / POSTGRES_PASSWORD live in the API env file:
+    # one source of truth for the credentials both sides must agree on.
+    env_file:
+      - ./env/api.env
+    environment:
+      TZ: ${TZ:-Asia/Jakarta}
+      POSTGRES_INITDB_ARGS: '--data-checksums'
+    ports:
+      - '${POSTGRES_BIND_IP:-127.0.0.1}:${POSTGRES_PUBLIC_PORT:-5432}:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks: [backend]
+    shm_size: 256mb
+    stop_grace_period: 1m
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}']
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  redis:
+    <<: *hardening
+    image: redis:7.4-alpine
+    # noeviction: this Redis also backs the queue and Reverb presence state —
+    # silently dropping keys under memory pressure would lose jobs.
+    command:
+      - redis-server
+      - --appendonly
+      - 'yes'
+      - --maxmemory
+      - ${REDIS_MAXMEMORY:-512mb}
+      - --maxmemory-policy
+      - noeviction
+    volumes:
+      - redis_data:/data
+    networks: [backend]
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  # -------------------------------------------------------------------------
+  # apps/api — Laravel 13, multi tenant backend
+  # -------------------------------------------------------------------------
+
+  # One-shot. Never started by `up`; the deploy script runs it with
+  # `compose run --rm api-migrate` after pulling and before restarting apps.
+  api-migrate:
+    <<: *api
+    profiles: [tools]
+    restart: 'no'
+    command:
+      - sh
+      - -c
+      - >-
+        php artisan migrate --force --no-interaction &&
+        php artisan tenants:migrate --force --no-interaction &&
+        php artisan db:seed --class=EngineSeeder --force --no-interaction
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  api:
+    <<: *api
+    command: ['php-fpm', '-F']
+    networks:
+      backend:
+        # apps/api/docker/nginx/default.conf hardcodes `server app:9000`, and
+        # deploy/env/api.env inherits Laravel's own `app` naming. The alias lets
+        # both work unchanged while the service keeps its api-* prefix here.
+        aliases: [app]
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    stop_grace_period: 30s
+    healthcheck:
+      # php-fpm speaks FastCGI, not HTTP: a TCP connect is the honest check.
+      test: ['CMD-SHELL', 'php -r ''exit(@fsockopen("127.0.0.1", 9000) ? 0 : 1);''']
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  api-web:
+    <<: *hardening
+    image: ${REGISTRY}/sewantara-api-web:${API_IMAGE_TAG}
+    environment:
+      TZ: ${TZ:-Asia/Jakarta}
+    ports:
+      - '${API_HTTP_BIND:-0.0.0.0}:${API_HTTP_PORT:-8090}:80'
+    volumes:
+      # Read-only: nginx serves tenant uploads but must never write them.
+      - api_storage:/var/www/html/storage:ro
+    networks: [backend, edge]
+    depends_on:
+      api:
+        condition: service_started
+      api-reverb:
+        condition: service_started
+    healthcheck:
+      test: ['CMD', 'wget', '--quiet', '--tries=1', '--spider', 'http://127.0.0.1/up']
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  api-queue:
+    <<: *api
+    command:
+      - php
+      - artisan
+      - queue:work
+      - redis
+      - --sleep=1
+      - --rest=1
+      - --tries=3
+      - --timeout=90
+      - --max-time=3600
+      - --no-interaction
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    # Long enough for an in-flight job (--timeout=90) to finish on redeploy.
+    stop_grace_period: 2m
+
+  api-scheduler:
+    <<: *api
+    command: ['php', 'artisan', 'schedule:work', '--no-interaction']
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    stop_grace_period: 1m
+
+  api-reverb:
+    <<: *api
+    command:
+      - php
+      - artisan
+      - reverb:start
+      - --host=0.0.0.0
+      - --port=8080
+      - --no-interaction
+    networks:
+      backend:
+        # `server reverb:8080` in the nginx config, and REVERB_HOST=reverb in
+        # deploy/env/api.env, both resolve through this alias.
+        aliases: [reverb]
+    depends_on:
+      redis:
+        condition: service_healthy
+    stop_grace_period: 30s
+    healthcheck:
+      test: ['CMD-SHELL', 'php -r ''exit(@fsockopen("127.0.0.1", 8080) ? 0 : 1);''']
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  # -------------------------------------------------------------------------
+  # apps/dashboard — Nuxt SPA (ssr:false) for tenant operators
+  # -------------------------------------------------------------------------
+
+  dashboard:
+    <<: *hardening
+    image: ${REGISTRY}/sewantara-dashboard:${DASHBOARD_IMAGE_TAG}
+    env_file:
+      - ./env/dashboard.env
+    environment:
+      <<: *nuxt-env
+      NITRO_HOST: 0.0.0.0
+      NITRO_PORT: '3005'
+    ports:
+      - '${DASHBOARD_BIND:-0.0.0.0}:${DASHBOARD_PORT:-3005}:3005'
+    networks: [edge]
+    tmpfs:
+      - /tmp
+    stop_grace_period: 20s
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:3005/healthz').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+  # -------------------------------------------------------------------------
+  # apps/tenant-web — Nuxt SSR, serves *.sewantara.id
+  # -------------------------------------------------------------------------
+
+  tenant-web:
+    <<: *hardening
+    image: ${REGISTRY}/sewantara-tenant-web:${TENANT_WEB_IMAGE_TAG}
+    env_file:
+      - ./env/tenant-web.env
+    environment:
+      <<: *nuxt-env
+      HOST: 0.0.0.0
+      PORT: '3000'
+    ports:
+      - '${TENANT_WEB_BIND:-0.0.0.0}:${TENANT_WEB_PORT:-3000}:3000'
+    networks: [edge]
+    tmpfs:
+      - /tmp
+    stop_grace_period: 20s
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:3000/healthz').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+  # -------------------------------------------------------------------------
+  # apps/landing — Nuxt SSR, sewantara.id
+  # -------------------------------------------------------------------------
+
+  landing:
+    <<: *hardening
+    image: ${REGISTRY}/sewantara-landing:${LANDING_IMAGE_TAG}
+    env_file:
+      - ./env/landing.env
+    environment:
+      <<: *nuxt-env
+      HOST: 0.0.0.0
+      PORT: '3003'
+    ports:
+      - '${LANDING_BIND:-0.0.0.0}:${LANDING_PORT:-3003}:3003'
+    networks: [edge]
+    tmpfs:
+      - /tmp
+    stop_grace_period: 20s
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:3003/healthz').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+networks:
+  # backend: postgres, redis, php-fpm, reverb. Nothing here is published.
+  backend:
+    driver: bridge
+  # edge: only the containers a reverse proxy is allowed to reach.
+  edge:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  redis_data:
+  # Tenant uploads and Laravel runtime state. Back this up with the database.
+  api_storage:

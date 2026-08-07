@@ -1,0 +1,80 @@
+name: CD (staging)
+
+# Every commit that lands on main produces immutable images tagged
+# `sha-<full-commit-sha>` (plus `edge`) for the components it touched, and — when
+# staging is enabled — rolls them out to the staging host.
+#
+# Production is never touched here. That is release.yml.
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - '**/*.md'
+      - 'docs/**'
+      - '.github/ISSUE_TEMPLATE/**'
+  workflow_dispatch:
+    inputs:
+      apps:
+        description: 'Apps to build (space separated, empty = detect from the last push)'
+        type: string
+        default: ''
+
+concurrency:
+  # Never let two rollouts of the same environment overlap.
+  group: cd-staging
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  plan:
+    name: Plan
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      matrix: ${{ steps.detect.outputs.matrix }}
+      apps-list: ${{ steps.detect.outputs.apps-list }}
+      has-components: ${{ steps.detect.outputs.has-components }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - id: detect
+        uses: ./.github/actions/detect-components
+        with:
+          apps: ${{ inputs.apps || '' }}
+
+  image:
+    name: image
+    needs: plan
+    if: needs.plan.outputs.has-components == 'true'
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.plan.outputs.matrix) }}
+    uses: ./.github/workflows/reusable-docker.yml
+    with:
+      component: ${{ matrix.component }}
+      context: ${{ matrix.context }}
+      dockerfile: ${{ matrix.dockerfile }}
+      target: ${{ matrix.target }}
+      image: ${{ matrix.image }}
+      platforms: ${{ matrix.platforms }}
+      push: true
+      scan: true
+
+  deploy:
+    name: Deploy staging
+    needs: [plan, image]
+    # Opt-in: set repository variable STAGING_ENABLED=true once a staging host
+    # exists. Until then main only publishes images.
+    if: vars.STAGING_ENABLED == 'true'
+    uses: ./.github/workflows/reusable-deploy.yml
+    with:
+      environment: staging
+      ref: ${{ github.sha }}
+      tag: sha-${{ github.sha }}
+      apps: ${{ needs.plan.outputs.apps-list }}
+    secrets: inherit

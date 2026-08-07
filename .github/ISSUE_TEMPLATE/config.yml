@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Runbook insiden production
+    url: https://github.com/sewantara/sewantara/blob/main/docs/06_RUNBOOK.md
+    about: Production sedang bermasalah? Ikuti runbook dulu, baru buat issue.
+  - name: Dokumentasi monorepo
+    url: https://github.com/sewantara/sewantara/blob/main/docs/00_MONOREPO.md
+    about: Pertanyaan soal struktur repo, cara build, atau alur deploy.

@@ -1,0 +1,72 @@
+# Local-only overlay: adds build definitions to the production stack so the
+# whole platform can be brought up from source on a workstation.
+#
+#   cd deploy
+#   docker compose --env-file .env --env-file .env.images \
+#     -f compose.yml -f compose.build.yml up -d --build
+#
+# Or via the Makefile at the repository root:  make up-local
+#
+# Never use this on the production host. Production pulls tested images; the
+# server has no toolchain, no source-of-truth build args, and no CI cache.
+
+services:
+  api:
+    build: &api-build
+      context: ../apps/api
+      dockerfile: Dockerfile
+      target: app
+      args:
+        VITE_APP_NAME: ${VITE_APP_NAME:-Sewantara}
+        VITE_REVERB_APP_KEY: ${VITE_REVERB_APP_KEY:-}
+        VITE_REVERB_HOST: ${VITE_REVERB_HOST:-localhost}
+        VITE_REVERB_PORT: ${VITE_REVERB_PORT:-8080}
+        VITE_REVERB_SCHEME: ${VITE_REVERB_SCHEME:-http}
+    image: ${REGISTRY}/sewantara-api:${API_IMAGE_TAG}
+
+  api-migrate:
+    build: *api-build
+    image: ${REGISTRY}/sewantara-api:${API_IMAGE_TAG}
+
+  api-queue:
+    build: *api-build
+    image: ${REGISTRY}/sewantara-api:${API_IMAGE_TAG}
+
+  api-scheduler:
+    build: *api-build
+    image: ${REGISTRY}/sewantara-api:${API_IMAGE_TAG}
+
+  api-reverb:
+    build: *api-build
+    image: ${REGISTRY}/sewantara-api:${API_IMAGE_TAG}
+
+  api-web:
+    build:
+      context: ../apps/api
+      dockerfile: Dockerfile
+      target: web
+    image: ${REGISTRY}/sewantara-api-web:${API_IMAGE_TAG}
+
+  dashboard:
+    build:
+      context: ../apps/dashboard
+      dockerfile: Dockerfile
+      target: runner
+      args:
+        # SPA build: this value is baked into the bundle, not read at runtime.
+        NUXT_PUBLIC_API_BASE: ${NUXT_PUBLIC_API_BASE:-http://localhost:8090}
+    image: ${REGISTRY}/sewantara-dashboard:${DASHBOARD_IMAGE_TAG}
+
+  tenant-web:
+    build:
+      context: ../apps/tenant-web
+      dockerfile: Dockerfile
+      target: runtime
+    image: ${REGISTRY}/sewantara-tenant-web:${TENANT_WEB_IMAGE_TAG}
+
+  landing:
+    build:
+      context: ../apps/landing
+      dockerfile: Dockerfile
+      target: runner
+    image: ${REGISTRY}/sewantara-landing:${LANDING_IMAGE_TAG}

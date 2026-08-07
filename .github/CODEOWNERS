@@ -1,0 +1,17 @@
+# Ownership per app. Replace the placeholder handles/teams with real ones —
+# GitHub silently ignores entries it cannot resolve, which reads as "no owner".
+
+*                       @sewantara/maintainers
+
+/apps/api/              @sewantara/backend
+/apps/dashboard/        @sewantara/frontend
+/apps/tenant-web/       @sewantara/frontend
+/apps/landing/          @sewantara/frontend
+
+# Anything that can change what runs in production needs a platform review.
+/.github/               @sewantara/platform
+/deploy/                @sewantara/platform
+/apps/*/Dockerfile      @sewantara/platform
+/apps/*/compose.yaml    @sewantara/platform
+
+/docs/                  @sewantara/maintainers

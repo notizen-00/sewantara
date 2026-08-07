@@ -1,0 +1,28 @@
+# Build output and dependencies are produced inside the image.
+node_modules
+.nuxt
+.output
+.nitro
+.cache
+coverage
+
+# Secrets never enter the build context.
+.env
+.env.*
+!.env.example
+
+# Nothing below changes the built artefact; keeping it out avoids needless
+# cache invalidation on every docs or compose tweak.
+.git
+.github
+Dockerfile
+compose*.yaml
+compose*.yml
+*.md
+*.log
+.DS_Store
+.idea
+.vscode
+
+# NOTE: tests/ stays in the context on purpose — nuxt.config.ts enables
+# typescript.typeCheck, so the build type checks the test files too.

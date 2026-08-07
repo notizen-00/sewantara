@@ -1,0 +1,52 @@
+name: Change request
+description: Fitur baru atau perubahan perilaku
+labels: [enhancement, triage]
+body:
+  - type: dropdown
+    id: app
+    attributes:
+      label: App
+      multiple: true
+      options:
+        - api (Laravel)
+        - dashboard (Nuxt SPA)
+        - tenant-web (Nuxt SSR)
+        - landing (Nuxt)
+        - deploy / CI
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Masalah yang diselesaikan
+      description: Mulai dari kebutuhan pengguna atau tenant, bukan dari solusi teknis.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Usulan
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Kriteria selesai
+      value: |
+        - [ ]
+        - [ ]
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: impact
+    attributes:
+      label: Dampak
+      options:
+        - label: Butuh migration database
+        - label: Butuh environment variable / secret baru
+        - label: Breaking change untuk konsumen API
+        - label: Butuh perubahan di deploy/ atau pipeline
