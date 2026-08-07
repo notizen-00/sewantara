@@ -84,7 +84,7 @@ RUN composer dump-autoload --no-dev --optimize \
 ENTRYPOINT ["sewantara-entrypoint"]
 CMD ["php-fpm", "-F"]
 
-FROM nginx:1.27-alpine AS web
+FROM nginx:1.31-alpine AS web
 
 WORKDIR /var/www/html
 
