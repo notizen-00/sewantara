@@ -90,6 +90,7 @@ export function useBookingPresenter() {
   const createOpen = ref(false)
   const checkoutOpen = ref(false)
   const customerCreateOpen = ref(false)
+  const paymentDialogOpen = ref(false)
   const actionTarget = ref<BookingAction | null>(null)
   const initializedContext = ref('')
   const search = ref('')
@@ -101,6 +102,10 @@ export function useBookingPresenter() {
   const form = reactive<BookingFormState>(createBookingForm())
   const paymentForm = reactive<PosPaymentFormState>(createPaymentForm())
   const customerForm = reactive<QuickCustomerFormState>(createQuickCustomerForm())
+  const paymentDialogForm = reactive<{ amount: string; method: PosPaymentMethod }>({
+    amount: '',
+    method: 'cash',
+  })
 
   const contextKey = computed(() => `${auth.tenantId}:${auth.branchId}`)
   const detailOpen = computed(() => Boolean(store.detail))
@@ -288,6 +293,10 @@ export function useBookingPresenter() {
     }
     return Math.max(0, bookingTotal(booking) - paidAmount.value)
   })
+  const canRecordPayment = computed(() => {
+    const status = normalizeStatus(currentBooking.value?.status || '')
+    return Boolean(currentBooking.value) && outstandingAmount.value > 0 && !['cancelled', 'canceled'].includes(status)
+  })
 
   async function fetchAll(showError = true) {
     try {
@@ -356,6 +365,7 @@ export function useBookingPresenter() {
     if (store.loadingDetail || store.updatingStatus) return
     store.detail = null
     actionTarget.value = null
+    paymentDialogOpen.value = false
   }
 
   async function refreshDetail() {
@@ -430,6 +440,49 @@ export function useBookingPresenter() {
 
   function closeCheckout() {
     if (!checkoutBusy.value) checkoutOpen.value = false
+  }
+
+  function openPaymentDialog() {
+    if (!canRecordPayment.value) return
+    paymentDialogForm.amount = outstandingAmount.value > 0 ? String(outstandingAmount.value) : ''
+    paymentDialogForm.method = 'cash'
+    paymentDialogOpen.value = true
+  }
+
+  function closePaymentDialog() {
+    if (!store.recordingPayment) paymentDialogOpen.value = false
+  }
+
+  async function submitPaymentDialog() {
+    const booking = currentBooking.value
+    if (!booking) return
+
+    const amount = Number(paymentDialogForm.amount)
+    if (!Number.isFinite(amount) || amount <= 0) {
+      snackbar.warning('Masukkan nominal pembayaran lebih dari Rp0.')
+      return
+    }
+    if (amount > outstandingAmount.value + 0.5) {
+      snackbar.warning(`Nominal melebihi sisa tagihan ${formatCurrency(outstandingAmount.value)}.`)
+      return
+    }
+
+    try {
+      await store.recordPayment(booking.id, {
+        type: amount >= outstandingAmount.value ? 'full_payment' : 'down_payment',
+        method: paymentDialogForm.method,
+        amount,
+      })
+      paymentDialogOpen.value = false
+      snackbar.success('Pembayaran berhasil dicatat.')
+      try {
+        await Promise.all([store.fetchDetail(booking.id), fetchAll(false)])
+      } catch {
+        snackbar.warning('Pembayaran tersimpan, tetapi data booking terbaru belum dapat dimuat lengkap.')
+      }
+    } catch (err) {
+      snackbar.error(err instanceof Error ? err.message : store.error)
+    }
   }
 
   function openCustomerCreate() {
@@ -608,8 +661,9 @@ export function useBookingPresenter() {
       } else {
         try {
           await store.recordPayment(createdBooking.id, {
+            type: paymentForm.mode === 'full' ? 'full_payment' : 'down_payment',
+            method: paymentForm.method,
             amount,
-            payment_method: paymentForm.method,
           })
         } catch (err) {
           paymentError = err
@@ -813,6 +867,7 @@ export function useBookingPresenter() {
       waiting: 'Antrean',
       confirmed: 'Dikonfirmasi',
       unpaid: 'Belum dibayar',
+      partial: 'Dibayar sebagian',
       partially_paid: 'Dibayar sebagian',
       paid: 'Lunas',
       active: 'Aktif',
@@ -835,7 +890,7 @@ export function useBookingPresenter() {
     const normalized = normalizeStatus(status)
     if (['confirmed', 'paid', 'success', 'settled', 'completed', 'finished', 'returned'].includes(normalized)) return 'success'
     if (['cancelled', 'canceled', 'expired', 'rejected', 'failed'].includes(normalized)) return 'danger'
-    if (['active', 'ongoing', 'partially_paid'].includes(normalized)) return 'info'
+    if (['active', 'ongoing', 'partial', 'partially_paid'].includes(normalized)) return 'info'
     return 'warning'
   }
 
@@ -929,6 +984,7 @@ export function useBookingPresenter() {
     createOpen,
     checkoutOpen,
     customerCreateOpen,
+    paymentDialogOpen,
     detailOpen,
     currentBooking,
     actionTarget,
@@ -938,6 +994,7 @@ export function useBookingPresenter() {
     form,
     paymentForm,
     customerForm,
+    paymentDialogForm,
     customerStore,
     activeProducts,
     categoryOptions,
@@ -960,6 +1017,7 @@ export function useBookingPresenter() {
     canCheckOut,
     canCancel,
     canReturn,
+    canRecordPayment,
     paidAmount,
     outstandingAmount,
     initialize,
@@ -977,6 +1035,9 @@ export function useBookingPresenter() {
     closeCreate,
     openCheckout,
     closeCheckout,
+    openPaymentDialog,
+    closePaymentDialog,
+    submitPaymentDialog,
     openCustomerCreate,
     closeCustomerCreate,
     submitCustomer,

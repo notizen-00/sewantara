@@ -85,9 +85,13 @@ export interface BookingPayment {
   [key: string]: unknown
 }
 
+export type BookingPaymentType = 'down_payment' | 'full_payment' | 'rental' | 'deposit' | 'late_fee'
+
 export interface BookingPaymentCreatePayload {
+  type: BookingPaymentType
+  method: 'cash' | 'transfer'
   amount: number
-  payment_method: 'cash' | 'transfer'
+  notes?: string | null
 }
 
 export interface Booking {

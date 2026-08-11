@@ -1159,12 +1159,25 @@ watch(
 
               <section class="grid grid-cols-[minmax(0,1fr)_280px] gap-4 max-lg:grid-cols-1">
                 <article class="rounded-md border border-neutral-200">
-                  <div class="flex items-center gap-3 border-b border-neutral-200 px-4 py-3">
-                    <CreditCard :size="17" class="text-neutral-500" />
-                    <div>
-                      <h3 class="text-sm font-semibold text-neutral-900">Pembayaran</h3>
-                      <p class="mt-0.5 text-xs text-neutral-500">{{ bookings.currentBooking.payment_status || 'Status dari transaksi' }}</p>
+                  <div class="flex items-center justify-between gap-3 border-b border-neutral-200 px-4 py-3">
+                    <div class="flex items-center gap-3">
+                      <CreditCard :size="17" class="text-neutral-500" />
+                      <div>
+                        <h3 class="text-sm font-semibold text-neutral-900">Pembayaran</h3>
+                        <p class="mt-0.5 text-xs text-neutral-500">
+                          {{ bookings.statusLabel(bookings.currentBooking.payment_status || 'unpaid') }}
+                        </p>
+                      </div>
                     </div>
+                    <button
+                      v-if="bookings.canRecordPayment"
+                      type="button"
+                      class="inline-flex min-h-8 items-center gap-1.5 rounded-md px-2.5 text-xs font-semibold text-primary-700 hover:bg-primary-50"
+                      @click="bookings.openPaymentDialog"
+                    >
+                      <Plus :size="14" />
+                      Catat pembayaran
+                    </button>
                   </div>
                   <div v-if="bookings.currentBooking.payments?.length" class="divide-y divide-neutral-200">
                     <div
@@ -1383,6 +1396,65 @@ watch(
             </button>
           </div>
         </section>
+      </div>
+    </Transition>
+
+    <Transition name="modal">
+      <div v-if="bookings.paymentDialogOpen && bookings.currentBooking" class="fixed inset-0 z-[80] grid place-items-center p-4">
+        <button
+          type="button"
+          aria-label="Tutup form pembayaran"
+          class="absolute inset-0 bg-neutral-900/50 backdrop-blur-[2px]"
+          @click="bookings.closePaymentDialog"
+        ></button>
+        <form
+          class="relative w-full max-w-md rounded-lg border border-neutral-200 bg-neutral-0 p-6 shadow-2xl"
+          @submit.prevent="bookings.submitPaymentDialog"
+        >
+          <span class="grid h-11 w-11 place-items-center rounded-md bg-primary-50 text-primary-700">
+            <Banknote :size="20" />
+          </span>
+          <h2 class="mt-4 text-lg font-semibold text-neutral-900">Catat pembayaran</h2>
+          <p class="mt-2 text-sm leading-6 text-neutral-500">
+            Sisa tagihan {{ bookings.bookingCode(bookings.currentBooking) }}: {{ ' ' }}
+            <strong class="text-neutral-900">{{ bookings.formatCurrency(bookings.outstandingAmount) }}</strong>
+          </p>
+
+          <div class="mt-4 grid gap-4">
+            <AtomsAppInput
+              v-model="bookings.paymentDialogForm.amount"
+              label="Nominal pembayaran (Rp)"
+              type="number"
+              :min="0"
+              step="1000"
+              required
+            />
+            <AtomsAppSelect
+              v-model="bookings.paymentDialogForm.method"
+              label="Metode pembayaran"
+              :options="[
+                { label: 'Tunai', value: 'cash' },
+                { label: 'Transfer', value: 'transfer' },
+              ]"
+            />
+          </div>
+
+          <div class="mt-6 flex justify-end gap-2">
+            <AtomsAppButton
+              type="button"
+              variant="ghost"
+              :disabled="bookings.store.recordingPayment"
+              @click="bookings.closePaymentDialog"
+            >
+              Batal
+            </AtomsAppButton>
+            <AtomsAppButton type="submit" :disabled="bookings.store.recordingPayment">
+              <LoaderCircle v-if="bookings.store.recordingPayment" :size="16" class="mr-2 animate-spin" />
+              <Banknote v-else :size="16" class="mr-2" />
+              {{ bookings.store.recordingPayment ? 'Menyimpan...' : 'Simpan pembayaran' }}
+            </AtomsAppButton>
+          </div>
+        </form>
       </div>
     </Transition>
   </Teleport>

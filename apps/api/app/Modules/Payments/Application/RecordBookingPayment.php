@@ -26,10 +26,12 @@ class RecordBookingPayment
 
             if ($payment->status === 'paid' && $payment->type !== 'deposit') {
                 $paidAmount = (float) $booking->paid_amount + (float) $payment->amount;
+                $remainingAmount = max(0, (float) $booking->total_amount - $paidAmount);
 
                 $booking->update([
                     'paid_amount' => $paidAmount,
-                    'remaining_amount' => max(0, (float) $booking->total_amount - $paidAmount),
+                    'remaining_amount' => $remainingAmount,
+                    'payment_status' => $remainingAmount <= 0 ? 'paid' : 'partial',
                 ]);
             }
 

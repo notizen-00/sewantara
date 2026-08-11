@@ -119,13 +119,13 @@ class ManageBookings
             $this->createInvoice($booking, $tenantId);
             $this->recordInitialStatus($booking, $tenantId, $creatorId);
 
-            return $booking->load(['items', 'allocations']);
+            return $booking->load(['items', 'allocations', 'payments']);
         });
     }
 
     public function detail(Booking $booking): Booking
     {
-        return $booking->load(['items', 'allocations']);
+        return $booking->load(['items', 'allocations', 'payments']);
     }
 
     private function guardUnitAvailability(array $preparedItems, array $attributes): void
