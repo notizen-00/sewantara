@@ -10,8 +10,14 @@ use App\Models\Tenant;
 
 class GetDashboardReport
 {
+    public function __construct(
+        private readonly GetOverdueBookings $overdueBookings,
+    ) {}
+
     public function execute(Tenant $tenant, int $branchId): array
     {
+        $overdueBookings = $this->overdueBookings->execute($branchId);
+
         return [
             'tenant' => $tenant->only(['id', 'name', 'slug', 'business_type', 'timezone', 'currency']),
             'summary' => [
@@ -41,7 +47,9 @@ class GetDashboardReport
                     ->where('status', 'paid')
                     ->where('type', 'deposit')
                     ->sum('amount'),
+                'overdue_bookings' => $overdueBookings->count(),
             ],
+            'overdue_bookings' => $overdueBookings,
         ];
     }
 }
