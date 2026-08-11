@@ -343,6 +343,11 @@ const currentDate = new Intl.DateTimeFormat('id-ID', {
     @back="$emit('navigate', 'overview')"
   />
 
+  <OrganismsBookingCalendarWorkspace
+    v-else-if="section === 'calendar'"
+    @back="$emit('navigate', 'overview')"
+  />
+
   <OrganismsProductWorkspace
     v-else-if="section === 'products'"
     @back="$emit('navigate', 'overview')"

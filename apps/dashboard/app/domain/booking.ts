@@ -39,6 +39,8 @@ export interface BookingUnit {
 export interface BookingItem {
   id?: number
   product_id: number
+  product_name?: string | null
+  sku?: string | null
   quantity?: number
   product?: BookingProduct | null
   product_unit_id?: number | null
@@ -155,6 +157,14 @@ export interface AvailabilityResult {
   quantity_available?: number
   message?: string
   [key: string]: unknown
+}
+
+export interface BookingListQuery {
+  status?: string
+  from?: string
+  to?: string
+  product_id?: number | null
+  per_page?: number
 }
 
 export interface BookingCollection<T> {

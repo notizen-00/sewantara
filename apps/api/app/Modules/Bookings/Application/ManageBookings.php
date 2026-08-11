@@ -27,13 +27,24 @@ class ManageBookings
         ?string $status,
         int $branchId,
         int $perPage = 20,
+        ?string $from = null,
+        ?string $to = null,
+        ?int $productId = null,
     ): LengthAwarePaginator {
         return Booking::query()
             ->with('items')
             ->where('branch_id', $branchId)
             ->when($status, fn ($query, string $value) => $query->where('status', $value))
-            ->latest()
-            ->paginate($perPage);
+            ->when($productId, fn ($query, int $value) => $query->whereHas(
+                'items',
+                fn ($items) => $items->where('product_id', $value),
+            ))
+            ->when(
+                $from !== null && $to !== null,
+                fn ($query) => $query->where('start_at', '<', $to)->where('end_at', '>', $from)->orderBy('start_at'),
+                fn ($query) => $query->latest(),
+            )
+            ->paginate(min(max($perPage, 1), 200));
     }
 
     public function create(string $tenantId, ?int $creatorId, array $attributes): Booking

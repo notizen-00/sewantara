@@ -18,6 +18,9 @@ class BookingController extends Controller
                 $request->string('status')->toString() ?: null,
                 app('currentBranch')->getKey(),
                 $request->integer('per_page', 20),
+                $request->string('from')->toString() ?: null,
+                $request->string('to')->toString() ?: null,
+                $request->filled('product_id') ? $request->integer('product_id') : null,
             ),
         ]);
     }

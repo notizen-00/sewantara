@@ -5,6 +5,7 @@ import type {
   BookingCollectionPayload,
   BookingCreatePayload,
   BookingCustomer,
+  BookingListQuery,
   BookingProductPrice,
   BookingPayment,
   BookingPaymentCreatePayload,
@@ -15,7 +16,16 @@ export function useBookingRepository() {
   const api = useApiClient()
 
   return {
-    list: () => api.tenant<BookingCollectionPayload<Booking>>('/bookings'),
+    list: (query: BookingListQuery = {}) =>
+      api.tenant<BookingCollectionPayload<Booking>>('/bookings', {
+        query: {
+          status: query.status,
+          from: query.from,
+          to: query.to,
+          product_id: query.product_id,
+          per_page: query.per_page,
+        },
+      }),
     get: (id: number) => api.tenant<Booking>(`/bookings/${id}`),
     create: (payload: BookingCreatePayload) =>
       api.tenant<Booking>('/bookings', {
