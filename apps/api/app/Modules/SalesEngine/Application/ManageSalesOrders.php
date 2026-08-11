@@ -49,7 +49,7 @@ class ManageSalesOrders
                 'customer_id' => $attributes['customer_id'] ?? null,
                 'branch_id' => $attributes['branch_id'] ?? null,
                 'order_number' => 'ORD-'.now()->format('ymd').'-'.strtoupper(Str::random(6)),
-                'status' => 'draft',
+                'status' => $attributes['status'] ?? 'draft',
                 'total_amount' => $totalAmount,
                 'notes' => $attributes['notes'] ?? null,
             ]);

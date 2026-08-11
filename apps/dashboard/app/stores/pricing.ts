@@ -10,6 +10,7 @@ export const usePricingStore = defineStore('pricing', () => {
   const prices = ref<ProductPrice[]>([])
   const loading = ref(false)
   const saving = ref(false)
+  const deleting = ref<number | null>(null)
   const error = ref('')
 
   async function fetchPrices() {
@@ -46,10 +47,24 @@ export const usePricingStore = defineStore('pricing', () => {
     }
   }
 
+  async function deletePrice(id: number) {
+    deleting.value = id
+    error.value = ''
+    try {
+      await usePricingRepository().delete(id)
+      prices.value = prices.value.filter((price) => price.id !== id)
+    } catch (err) {
+      error.value = err instanceof Error ? err.message : 'Harga produk gagal dihapus.'
+      throw err
+    } finally {
+      deleting.value = null
+    }
+  }
+
   function reset() {
     prices.value = []
     error.value = ''
   }
 
-  return { prices, loading, saving, error, fetchPrices, savePrice, reset }
+  return { prices, loading, saving, deleting, error, fetchPrices, savePrice, deletePrice, reset }
 })

@@ -39,7 +39,7 @@ class CustomerController extends Controller
 
     public function show(Customer $customer)
     {
-        return response()->json(['success' => true, 'data' => $customer]);
+        return response()->json(['success' => true, 'data' => $customer->load('documents')]);
     }
 
     public function update(Request $request, Customer $customer, ManageCustomers $customers)

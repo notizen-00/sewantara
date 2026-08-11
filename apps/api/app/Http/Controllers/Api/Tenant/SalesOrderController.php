@@ -33,6 +33,7 @@ class SalesOrderController extends Controller
                     ->where('tenant_id', (string) app('currentTenant')->getTenantKey()),
             ],
             'branch_id' => ['nullable', 'integer', 'min:1'],
+            'status' => ['nullable', Rule::in(['draft', 'completed'])],
             'notes' => ['nullable', 'string'],
             'items' => ['required', 'array', 'min:1'],
             'items.*.product_id' => [

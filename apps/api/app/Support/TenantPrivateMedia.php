@@ -18,6 +18,7 @@ class TenantPrivateMedia
         'categories/',
         'products/',
         'articles/',
+        'customers/',
         'demo/branding/',
         'demo/branches/',
         'demo/categories/',

@@ -103,6 +103,36 @@ watch(
       Daftar booking
     </button>
 
+    <div
+      v-if="bookings.salesEngineEnabled"
+      class="inline-flex w-fit rounded-md border border-neutral-200 bg-neutral-50 p-1"
+      role="tablist"
+      aria-label="Mode transaksi"
+    >
+      <button
+        type="button"
+        :class="[
+          'inline-flex min-h-9 items-center gap-2 rounded px-3 text-sm font-semibold transition',
+          bookings.mode === 'booking' ? 'bg-neutral-0 text-primary-700 shadow-sm' : 'text-neutral-600 hover:text-neutral-900',
+        ]"
+        @click="bookings.setMode('booking')"
+      >
+        <BookOpenCheck :size="15" />
+        Booking
+      </button>
+      <button
+        type="button"
+        :class="[
+          'inline-flex min-h-9 items-center gap-2 rounded px-3 text-sm font-semibold transition',
+          bookings.mode === 'sales' ? 'bg-neutral-0 text-primary-700 shadow-sm' : 'text-neutral-600 hover:text-neutral-900',
+        ]"
+        @click="bookings.setMode('sales')"
+      >
+        <ShoppingCart :size="15" />
+        Kasir
+      </button>
+    </div>
+
     <div class="grid grid-cols-[minmax(0,1fr)_430px] items-start gap-4 max-xl:grid-cols-[minmax(0,1fr)_400px] max-lg:grid-cols-1">
       <section class="overflow-hidden rounded-md border border-neutral-200 bg-neutral-0 shadow-card">
         <div class="border-b border-neutral-200 p-4 sm:p-5">
@@ -282,10 +312,13 @@ watch(
         <div class="flex items-center justify-between gap-3 border-b border-neutral-200 px-5 py-4">
           <div class="flex items-center gap-3">
             <span class="grid h-9 w-9 place-items-center rounded-md bg-primary-50 text-primary-700">
-              <ShoppingCart :size="17" />
+              <ShoppingCart v-if="bookings.mode === 'sales'" :size="17" />
+              <BookOpenCheck v-else :size="17" />
             </span>
             <div>
-              <h2 class="text-base font-semibold text-neutral-900">Checkout</h2>
+              <h2 class="text-base font-semibold text-neutral-900">
+                {{ bookings.mode === 'sales' ? 'Kasir' : 'Checkout booking' }}
+              </h2>
               <p class="mt-0.5 text-xs text-neutral-500">{{ bookings.form.items.length }} jenis · {{ bookings.cartQuantity }} item</p>
             </div>
           </div>
@@ -295,7 +328,8 @@ watch(
           <section class="grid gap-4 border-b border-neutral-200 p-5">
             <div class="flex items-center justify-between gap-3">
               <label class="text-sm font-medium text-neutral-700">
-                Pelanggan <span class="text-danger-500">*</span>
+                Pelanggan <span v-if="bookings.mode === 'booking'" class="text-danger-500">*</span>
+                <span v-else class="text-xs font-normal text-neutral-400">(opsional)</span>
               </label>
               <button
                 type="button"
@@ -311,12 +345,12 @@ watch(
               label="Pelanggan"
               :options="bookings.customerOptions"
               hide-label
-              required
+              :required="bookings.mode === 'booking'"
             />
             <p v-if="!bookings.customerOptions.length" class="rounded-md bg-amber-50 p-3 text-xs leading-5 text-amber-700">
               Belum ada pelanggan yang dapat dipilih.
             </p>
-            <div class="grid grid-cols-2 gap-3 max-sm:grid-cols-1">
+            <div v-if="bookings.mode === 'booking'" class="grid grid-cols-2 gap-3 max-sm:grid-cols-1">
               <AtomsAppInput
                 v-model="bookings.form.start_at"
                 label="Mulai rental"
@@ -420,7 +454,7 @@ watch(
               ></textarea>
             </label>
 
-            <div class="flex items-center justify-between gap-3 rounded-md border border-neutral-200 bg-neutral-50 px-4 py-3">
+            <div v-if="bookings.mode === 'booking'" class="flex items-center justify-between gap-3 rounded-md border border-neutral-200 bg-neutral-50 px-4 py-3">
                 <span
                   :class="[
                     'text-[11px] font-medium',
@@ -455,7 +489,17 @@ watch(
         </div>
 
         <div class="shrink-0 border-t border-neutral-200 bg-neutral-0 p-4 shadow-[0_-8px_24px_rgba(15,23,42,0.06)]">
-          <AtomsAppButton class="w-full" :disabled="bookings.checkoutBusy" @click="bookings.openCheckout">
+          <AtomsAppButton
+            v-if="bookings.mode === 'sales'"
+            class="w-full"
+            :disabled="bookings.salesBusy"
+            @click="bookings.submitSale"
+          >
+            <LoaderCircle v-if="bookings.salesBusy" :size="16" class="mr-2 animate-spin" />
+            <ShoppingCart v-else :size="16" class="mr-2" />
+            {{ bookings.salesBusy ? 'Memproses...' : 'Selesaikan penjualan' }}
+          </AtomsAppButton>
+          <AtomsAppButton v-else class="w-full" :disabled="bookings.checkoutBusy" @click="bookings.openCheckout">
             <BookOpenCheck :size="16" class="mr-2" />
             Selesaikan booking
           </AtomsAppButton>

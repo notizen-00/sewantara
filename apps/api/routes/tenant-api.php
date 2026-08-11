@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\Tenant\BranchController;
 use App\Http\Controllers\Api\Tenant\CategoryController;
 use App\Http\Controllers\Api\Tenant\CurrentTenantController;
 use App\Http\Controllers\Api\Tenant\CustomerController;
+use App\Http\Controllers\Api\Tenant\CustomerDocumentController;
 use App\Http\Controllers\Api\Tenant\DashboardReportController;
 use App\Http\Controllers\Api\Tenant\EngineController;
 use App\Http\Controllers\Api\Tenant\InventoryMovementController;
@@ -137,6 +138,12 @@ Route::prefix('tenant/{tenant}')
                 'tenant.subscription',
             ])->group(function () {
                 Route::apiResource('customers', CustomerController::class)->only(['index', 'store', 'show', 'update']);
+                Route::post('/customers/{customer}/documents', [CustomerDocumentController::class, 'store'])
+                    ->name('customers.documents.store');
+                Route::post('/customers/{customer}/documents/{document}/verify', [CustomerDocumentController::class, 'verify'])
+                    ->name('customers.documents.verify');
+                Route::delete('/customers/{customer}/documents/{document}', [CustomerDocumentController::class, 'destroy'])
+                    ->name('customers.documents.destroy');
                 Route::apiResource('bookings', BookingController::class)->only(['index', 'store', 'show']);
                 Route::post('/bookings/{booking}/check-out', [BookingController::class, 'checkOut'])
                     ->name('bookings.check-out');

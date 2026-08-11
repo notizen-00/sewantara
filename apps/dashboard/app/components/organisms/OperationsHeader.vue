@@ -11,63 +11,76 @@ import {
   Menu,
   Settings,
   UserRound,
-} from '@lucide/vue'
-import type { Branch } from '~/domain/mitra'
+} from "@lucide/vue";
+import type { Branch } from "~/domain/mitra";
 
 const props = defineProps<{
-  branches: Branch[]
-  activeBranchId: string
-  branchSwitching?: boolean
-  userName: string
-  userEmail: string
-  notificationCount?: number
-  sidebarCollapsed?: boolean
-}>()
+  branches: Branch[];
+  activeBranchId: string;
+  branchSwitching?: boolean;
+  userName: string;
+  userEmail: string;
+  notificationCount?: number;
+  sidebarCollapsed?: boolean;
+}>();
 
 const emit = defineEmits<{
-  menu: []
-  logout: []
-  createBooking: []
-  navigate: [section: string]
-  selectBranch: [branchId: number]
-}>()
+  menu: [];
+  logout: [];
+  createBooking: [];
+  navigate: [section: string];
+  selectBranch: [branchId: number];
+}>();
 
-const branchMenuOpen = ref(false)
-const notificationMenuOpen = ref(false)
-const profileMenuOpen = ref(false)
+const branchMenuOpen = ref(false);
+const notificationMenuOpen = ref(false);
+const profileMenuOpen = ref(false);
 
 const userInitials = computed(() => {
-  const parts = props.userName.trim().split(/\s+/).filter(Boolean)
-  return parts.slice(0, 2).map((part) => part[0]?.toUpperCase()).join('') || 'U'
-})
+  const parts = props.userName.trim().split(/\s+/).filter(Boolean);
+  return (
+    parts
+      .slice(0, 2)
+      .map((part) => part[0]?.toUpperCase())
+      .join("") || "U"
+  );
+});
 
-const menuIsOpen = computed(() => branchMenuOpen.value || notificationMenuOpen.value || profileMenuOpen.value)
+const menuIsOpen = computed(
+  () =>
+    branchMenuOpen.value || notificationMenuOpen.value || profileMenuOpen.value,
+);
 const activeBranch = computed(
-  () => props.branches.find((branch) => String(branch.id) === props.activeBranchId) || props.branches[0] || null,
-)
+  () =>
+    props.branches.find(
+      (branch) => String(branch.id) === props.activeBranchId,
+    ) ||
+    props.branches[0] ||
+    null,
+);
 
 function closeMenus() {
-  branchMenuOpen.value = false
-  notificationMenuOpen.value = false
-  profileMenuOpen.value = false
+  branchMenuOpen.value = false;
+  notificationMenuOpen.value = false;
+  profileMenuOpen.value = false;
 }
 
-function toggleMenu(menu: 'branch' | 'notification' | 'profile') {
+function toggleMenu(menu: "branch" | "notification" | "profile") {
   const nextState = {
-    branch: menu === 'branch' ? !branchMenuOpen.value : false,
-    notification: menu === 'notification' ? !notificationMenuOpen.value : false,
-    profile: menu === 'profile' ? !profileMenuOpen.value : false,
-  }
+    branch: menu === "branch" ? !branchMenuOpen.value : false,
+    notification: menu === "notification" ? !notificationMenuOpen.value : false,
+    profile: menu === "profile" ? !profileMenuOpen.value : false,
+  };
 
-  branchMenuOpen.value = nextState.branch
-  notificationMenuOpen.value = nextState.notification
-  profileMenuOpen.value = nextState.profile
+  branchMenuOpen.value = nextState.branch;
+  notificationMenuOpen.value = nextState.notification;
+  profileMenuOpen.value = nextState.profile;
 }
 
 function selectBranch(branch: Branch) {
-  if (!branch.is_active || props.branchSwitching) return
-  closeMenus()
-  emit('selectBranch', branch.id)
+  if (!branch.is_active || props.branchSwitching) return;
+  closeMenus();
+  emit("selectBranch", branch.id);
 }
 </script>
 
@@ -105,11 +118,19 @@ function selectBranch(branch: Branch) {
             :aria-expanded="branchMenuOpen"
             @click="toggleMenu('branch')"
           >
-            <LoaderCircle v-if="branchSwitching" :size="17" class="shrink-0 animate-spin text-primary-700" />
+            <LoaderCircle
+              v-if="branchSwitching"
+              :size="17"
+              class="shrink-0 animate-spin text-primary-700"
+            />
             <MapPin v-else :size="17" class="shrink-0 text-neutral-500" />
             <span class="min-w-0 truncate">
-              {{ activeBranch?.name || 'Cabang belum tersedia' }}
-              <span v-if="activeBranch?.code" class="ml-1 text-xs text-neutral-500">({{ activeBranch.code }})</span>
+              {{ activeBranch?.name || "Cabang belum tersedia" }}
+              <span
+                v-if="activeBranch?.code"
+                class="ml-1 text-xs text-neutral-500"
+                >({{ activeBranch.code }})</span
+              >
             </span>
             <ChevronDown :size="15" class="shrink-0 text-neutral-500" />
           </button>
@@ -119,7 +140,9 @@ function selectBranch(branch: Branch) {
             class="absolute left-0 top-12 z-40 w-64 rounded-sm border border-neutral-200 bg-neutral-0 p-2 shadow-lg"
             role="menu"
           >
-            <p class="px-2 pb-2 pt-1 text-xs font-semibold text-neutral-500">Pilih cabang</p>
+            <p class="px-2 pb-2 pt-1 text-xs font-semibold text-neutral-500">
+              Pilih cabang
+            </p>
             <button
               v-for="branch in branches"
               :key="branch.id"
@@ -127,22 +150,39 @@ function selectBranch(branch: Branch) {
               :disabled="!branch.is_active || branchSwitching"
               :class="[
                 'grid w-full grid-cols-[32px_minmax(0,1fr)_20px] items-center gap-3 rounded-sm px-3 py-2 text-left transition disabled:cursor-not-allowed disabled:opacity-50',
-                String(branch.id) === activeBranchId ? 'bg-primary-50' : 'hover:bg-neutral-50',
+                String(branch.id) === activeBranchId
+                  ? 'bg-primary-50'
+                  : 'hover:bg-neutral-50',
               ]"
               @click="selectBranch(branch)"
             >
-              <span class="grid h-8 w-8 place-items-center rounded-sm bg-primary-50 text-primary-700">
+              <span
+                class="grid h-8 w-8 place-items-center rounded-sm bg-primary-50 text-primary-700"
+              >
                 <MapPin :size="16" />
               </span>
               <span class="min-w-0">
-                <strong class="block truncate text-sm font-semibold text-neutral-900">{{ branch.name }}</strong>
+                <strong
+                  class="block truncate text-sm font-semibold text-neutral-900"
+                  >{{ branch.name }}</strong
+                >
                 <span class="block truncate text-xs text-neutral-500">
-                  {{ branch.code }} - {{ branch.is_active ? 'Aktif' : 'Nonaktif' }}
+                  {{ branch.code }} -
+                  {{ branch.is_active ? "Aktif" : "Nonaktif" }}
                 </span>
               </span>
-              <Check v-if="String(branch.id) === activeBranchId" :size="16" class="text-primary-700" />
+              <Check
+                v-if="String(branch.id) === activeBranchId"
+                :size="16"
+                class="text-primary-700"
+              />
             </button>
-            <p v-if="!branches.length" class="px-3 py-4 text-sm text-neutral-500">Cabang belum tersedia pada sesi ini.</p>
+            <p
+              v-if="!branches.length"
+              class="px-3 py-4 text-sm text-neutral-500"
+            >
+              Cabang belum tersedia pada sesi ini.
+            </p>
           </div>
         </div>
       </div>
@@ -155,7 +195,7 @@ function selectBranch(branch: Branch) {
           @click="$emit('createBooking')"
         >
           <BookOpenCheck :size="17" />
-          <span class="hidden sm:inline">Booking baru</span>
+          <span class="hidden sm:inline">Kasir</span>
         </button>
 
         <div class="relative">
@@ -183,11 +223,17 @@ function selectBranch(branch: Branch) {
               <h2 class="text-sm font-semibold text-neutral-900">Notifikasi</h2>
             </div>
             <div class="grid justify-items-center px-5 py-8 text-center">
-              <span class="grid h-10 w-10 place-items-center rounded-full bg-neutral-100 text-neutral-500">
+              <span
+                class="grid h-10 w-10 place-items-center rounded-full bg-neutral-100 text-neutral-500"
+              >
                 <Bell :size="18" />
               </span>
-              <p class="mt-3 text-sm font-semibold text-neutral-900">Belum ada notifikasi</p>
-              <p class="mt-1 text-xs leading-5 text-neutral-500">Pembaruan booking dan operasional akan muncul di sini.</p>
+              <p class="mt-3 text-sm font-semibold text-neutral-900">
+                Belum ada notifikasi
+              </p>
+              <p class="mt-1 text-xs leading-5 text-neutral-500">
+                Pembaruan booking dan operasional akan muncul di sini.
+              </p>
             </div>
           </div>
         </div>
@@ -201,7 +247,9 @@ function selectBranch(branch: Branch) {
             :aria-expanded="profileMenuOpen"
             @click="toggleMenu('profile')"
           >
-            <span class="grid h-8 w-8 place-items-center rounded-full bg-neutral-900 text-xs font-bold text-white">
+            <span
+              class="grid h-8 w-8 place-items-center rounded-full bg-neutral-900 text-xs font-bold text-white"
+            >
               {{ userInitials }}
             </span>
             <ChevronDown :size="15" class="hidden text-neutral-500 sm:block" />
@@ -213,13 +261,20 @@ function selectBranch(branch: Branch) {
             role="menu"
           >
             <div class="border-b border-neutral-200 px-2 pb-3 pt-1">
-              <p class="truncate text-sm font-semibold text-neutral-900">{{ userName }}</p>
-              <p class="mt-0.5 truncate text-xs text-neutral-500">{{ userEmail }}</p>
+              <p class="truncate text-sm font-semibold text-neutral-900">
+                {{ userName }}
+              </p>
+              <p class="mt-0.5 truncate text-xs text-neutral-500">
+                {{ userEmail }}
+              </p>
             </div>
             <button
               type="button"
               class="mt-2 flex min-h-9 w-full items-center gap-3 rounded-sm px-2 text-sm text-neutral-700 hover:bg-neutral-50"
-              @click="$emit('navigate', 'settings'); closeMenus()"
+              @click="
+                $emit('navigate', 'settings');
+                closeMenus();
+              "
             >
               <UserRound :size="16" />
               Profil akun
@@ -227,7 +282,10 @@ function selectBranch(branch: Branch) {
             <button
               type="button"
               class="flex min-h-9 w-full items-center gap-3 rounded-sm px-2 text-sm text-neutral-700 hover:bg-neutral-50"
-              @click="$emit('navigate', 'settings'); closeMenus()"
+              @click="
+                $emit('navigate', 'settings');
+                closeMenus();
+              "
             >
               <Settings :size="16" />
               Pengaturan
@@ -235,7 +293,10 @@ function selectBranch(branch: Branch) {
             <button
               type="button"
               class="flex min-h-9 w-full items-center gap-3 rounded-sm px-2 text-sm text-neutral-700 hover:bg-neutral-50"
-              @click="$emit('navigate', 'help'); closeMenus()"
+              @click="
+                $emit('navigate', 'help');
+                closeMenus();
+              "
             >
               <CircleHelp :size="16" />
               Pusat bantuan
@@ -244,7 +305,10 @@ function selectBranch(branch: Branch) {
               <button
                 type="button"
                 class="flex min-h-9 w-full items-center gap-3 rounded-sm px-2 text-sm font-medium text-danger-500 hover:bg-red-50"
-                @click="closeMenus(); $emit('logout')"
+                @click="
+                  closeMenus();
+                  $emit('logout');
+                "
               >
                 <LogOut :size="16" />
                 Keluar

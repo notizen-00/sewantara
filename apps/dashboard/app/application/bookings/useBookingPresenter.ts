@@ -8,12 +8,14 @@ import type {
 import type { Product } from '~/domain/product'
 import type { CustomerCreatePayload } from '~/domain/customer'
 import type { PricingType } from '~/domain/mitra'
+import type { SalesOrderCreatePayload } from '~/domain/sales'
 import { PRICING_TYPE_LABELS } from '~/domain/pricing'
 
 type AvailabilityState = 'idle' | 'available' | 'unavailable'
 type BookingAction = 'cancel' | 'return'
 type PosPaymentMode = 'unpaid' | 'full' | 'deposit'
 type PosPaymentMethod = 'cash' | 'transfer'
+type TransactionMode = 'booking' | 'sales'
 
 interface BookingFormState {
   customer_id: number | null
@@ -82,6 +84,8 @@ export function useBookingPresenter() {
   const store = useBookingStore()
   const products = useProductStore()
   const customerStore = useCustomerStore()
+  const engines = useEngineStore()
+  const salesOrders = useSalesOrderStore()
   const snackbar = useSnackbarStore()
   const createOpen = ref(false)
   const checkoutOpen = ref(false)
@@ -93,6 +97,7 @@ export function useBookingPresenter() {
   const dateFilter = ref('')
   const catalogSearch = ref('')
   const catalogCategoryId = ref<number | null>(null)
+  const mode = ref<TransactionMode>('booking')
   const form = reactive<BookingFormState>(createBookingForm())
   const paymentForm = reactive<PosPaymentFormState>(createPaymentForm())
   const customerForm = reactive<QuickCustomerFormState>(createQuickCustomerForm())
@@ -100,7 +105,12 @@ export function useBookingPresenter() {
   const contextKey = computed(() => `${auth.tenantId}:${auth.branchId}`)
   const detailOpen = computed(() => Boolean(store.detail))
   const currentBooking = computed(() => store.detail)
-  const activeProducts = computed(() => products.products.filter((product) => product.is_active))
+  const salesEngineEnabled = computed(() =>
+    engines.catalog.some((engine) => engine.code === 'sales' && engine.is_enabled),
+  )
+  const activeProducts = computed(() => products.products.filter((product) =>
+    product.is_active && (mode.value === 'sales' ? product.engine_code === 'sales' : product.engine_code !== 'sales'),
+  ))
   const categoryOptions = computed(() => [
     { label: 'Semua kategori', value: null as number | null },
     ...products.categories
@@ -129,6 +139,7 @@ export function useBookingPresenter() {
   const checkoutBusy = computed(() =>
     store.creating || store.recordingPayment,
   )
+  const salesBusy = computed(() => salesOrders.creating)
   const estimatedPricing = computed(() => {
     let total = 0
     let missingPrices = 0
@@ -292,6 +303,7 @@ export function useBookingPresenter() {
       store.fetchPrices(),
       products.fetchProducts({ is_active: true, per_page: 100 }),
       products.fetchCategories({ is_active: true, per_page: 100 }),
+      engines.fetchCatalog(),
     ])
     initializedContext.value = contextKey.value
 
@@ -307,6 +319,7 @@ export function useBookingPresenter() {
     form.customer_id = customerOptions.value[0]?.value || null
     catalogSearch.value = ''
     catalogCategoryId.value = null
+    mode.value = 'booking'
     store.resetAvailability()
     checkoutOpen.value = false
     createOpen.value = true
@@ -316,6 +329,13 @@ export function useBookingPresenter() {
     } else if (!activeProducts.value.length) {
       snackbar.warning('Belum ada produk aktif untuk dibooking.')
     }
+  }
+
+  function setMode(next: TransactionMode) {
+    if (mode.value === next) return
+    mode.value = next
+    form.items = []
+    store.resetAvailability()
   }
 
   async function openDetail(booking: Booking) {
@@ -459,6 +479,55 @@ export function useBookingPresenter() {
       return false
     }
     return true
+  }
+
+  function validateCart() {
+    if (!form.items.length) {
+      snackbar.warning('Pilih minimal satu produk untuk dijual.')
+      return false
+    }
+    if (form.items.some((line) => !Number.isInteger(Number(line.quantity)) || Number(line.quantity) < 1)) {
+      snackbar.warning('Jumlah setiap produk minimal 1.')
+      return false
+    }
+    return true
+  }
+
+  async function submitSale() {
+    if (!validateCart()) return
+
+    const items: SalesOrderCreatePayload['items'] = []
+    for (const line of form.items) {
+      const product = products.products.find((item) => item.id === line.product_id)
+      const rate = product ? productRate(product) : undefined
+      if (!rate) {
+        snackbar.warning(`Harga ${product?.name || `produk #${line.product_id}`} belum tersedia.`)
+        return
+      }
+      items.push({
+        product_id: line.product_id,
+        quantity: Number(line.quantity),
+        unit_price: Number(rate.price),
+      })
+    }
+
+    const payload: SalesOrderCreatePayload = {
+      customer_id: form.customer_id || null,
+      notes: form.notes.trim() || null,
+      status: 'completed',
+      items,
+    }
+
+    try {
+      const order = await salesOrders.create(payload)
+      createOpen.value = false
+      snackbar.success(
+        `Penjualan ${order.order_number || `#${order.id}`} senilai ${formatCurrency(Number(order.total_amount || 0))} berhasil dicatat.`,
+        'Transaksi kasir selesai',
+      )
+    } catch (err) {
+      snackbar.error(err instanceof Error ? err.message : salesOrders.error)
+    }
   }
 
   async function checkAvailability() {
@@ -842,6 +911,11 @@ export function useBookingPresenter() {
     auth,
     store,
     products,
+    engines,
+    salesOrders,
+    mode,
+    salesEngineEnabled,
+    salesBusy,
     createOpen,
     checkoutOpen,
     customerCreateOpen,
@@ -880,6 +954,9 @@ export function useBookingPresenter() {
     initialize,
     fetchAll,
     openCreate,
+    setMode,
+    validateCart,
+    submitSale,
     openDetail,
     closeDetail,
     refreshDetail,

@@ -19,5 +19,7 @@ export function usePricingRepository() {
         method: 'PATCH',
         body: JSON.stringify(payload),
       }),
+    delete: (id: number) =>
+      api.tenant<null>(`/product-prices/${id}`, { method: 'DELETE' }),
   }
 }

@@ -2,6 +2,7 @@
 import {
   ArrowLeft,
   AtSign,
+  BadgeCheck,
   ContactRound,
   LoaderCircle,
   Mail,
@@ -12,6 +13,8 @@ import {
   RefreshCw,
   RotateCcw,
   Search,
+  Trash2,
+  Upload,
   UserRoundPlus,
   Users,
   X,
@@ -169,7 +172,12 @@ onMounted(() => {
               </tr>
             </thead>
             <tbody class="divide-y divide-neutral-200">
-              <tr v-for="customer in customers.filteredCustomers" :key="customer.id" class="hover:bg-neutral-50">
+              <tr
+                v-for="customer in customers.filteredCustomers"
+                :key="customer.id"
+                class="cursor-pointer hover:bg-neutral-50"
+                @click="customers.openEdit(customer)"
+              >
                 <td class="px-5 py-4">
                   <div class="flex items-center gap-3">
                     <span class="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-primary-50 text-xs font-bold text-primary-700">
@@ -181,6 +189,7 @@ onMounted(() => {
                         v-if="customer.email"
                         :href="`mailto:${customer.email}`"
                         class="mt-0.5 block truncate text-xs text-neutral-500 hover:text-primary-700"
+                        @click.stop
                       >
                         {{ customer.email }}
                       </a>
@@ -189,7 +198,7 @@ onMounted(() => {
                   </div>
                 </td>
                 <td class="px-4 py-4 text-sm text-neutral-700">
-                  <a v-if="customer.phone" :href="`tel:${customer.phone}`" class="hover:text-primary-700">
+                  <a v-if="customer.phone" :href="`tel:${customer.phone}`" class="hover:text-primary-700" @click.stop>
                     {{ customer.phone }}
                   </a>
                   <span v-else class="text-neutral-400">—</span>
@@ -210,14 +219,19 @@ onMounted(() => {
         </div>
 
         <div class="divide-y divide-neutral-200 md:hidden">
-          <article v-for="customer in customers.filteredCustomers" :key="customer.id" class="p-4">
+          <article
+            v-for="customer in customers.filteredCustomers"
+            :key="customer.id"
+            class="cursor-pointer p-4"
+            @click="customers.openEdit(customer)"
+          >
             <div class="flex items-start gap-3">
               <span class="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-primary-50 text-xs font-bold text-primary-700">
                 {{ customers.initials(customer.name) }}
               </span>
               <div class="min-w-0 flex-1">
                 <h3 class="text-sm font-semibold text-neutral-900">{{ customer.name }}</h3>
-                <a v-if="customer.email" :href="`mailto:${customer.email}`" class="mt-1 block truncate text-xs text-primary-700">
+                <a v-if="customer.email" :href="`mailto:${customer.email}`" class="mt-1 block truncate text-xs text-primary-700" @click.stop>
                   {{ customer.email }}
                 </a>
               </div>
@@ -254,8 +268,16 @@ onMounted(() => {
         >
           <header class="flex h-16 shrink-0 items-center justify-between border-b border-neutral-200 px-5 sm:px-6">
             <div>
-              <h2 class="text-lg font-semibold text-neutral-900">Tambah pelanggan</h2>
-              <p class="mt-0.5 text-xs text-neutral-500">Pelanggan baru akan tersedia pada form booking.</p>
+              <h2 class="text-lg font-semibold text-neutral-900">
+                {{ customers.mode === 'edit' ? 'Edit pelanggan' : 'Tambah pelanggan' }}
+              </h2>
+              <p class="mt-0.5 text-xs text-neutral-500">
+                {{
+                  customers.mode === 'edit'
+                    ? 'Perbarui data dan kelengkapan dokumen pelanggan.'
+                    : 'Pelanggan baru akan tersedia pada form booking.'
+                }}
+              </p>
             </div>
             <button
               type="button"
@@ -333,17 +355,131 @@ onMounted(() => {
                   ></textarea>
                 </label>
               </section>
+
+              <section v-if="customers.mode === 'edit'" class="grid gap-4 border-t border-neutral-200 pt-6">
+                <div>
+                  <h3 class="text-sm font-semibold text-neutral-900">Dokumen identitas</h3>
+                  <p class="mt-1 text-xs text-neutral-500">KTP, SIM, atau paspor untuk kelengkapan verifikasi pelanggan.</p>
+                </div>
+
+                <div v-if="customers.store.loadingDetail" class="grid place-items-center py-6">
+                  <LoaderCircle :size="20" class="animate-spin text-primary-600" />
+                </div>
+
+                <div v-else class="grid gap-3">
+                  <article
+                    v-for="document in customers.documents"
+                    :key="document.id"
+                    class="flex items-center gap-3 rounded-md border border-neutral-200 p-3"
+                  >
+                    <AtomsPrivateImage
+                      v-if="document.front_url"
+                      :url="document.front_url"
+                      alt="Foto dokumen"
+                      class="h-14 w-20 shrink-0 rounded-md"
+                      image-class="h-full w-full object-cover"
+                    />
+                    <span v-else class="grid h-14 w-20 shrink-0 place-items-center rounded-md bg-neutral-100 text-neutral-400">
+                      <ContactRound :size="18" />
+                    </span>
+                    <div class="min-w-0 flex-1">
+                      <p class="text-sm font-semibold text-neutral-900">{{ customers.documentTypeLabel(document.document_type) }}</p>
+                      <p class="mt-0.5 truncate text-xs text-neutral-500">{{ document.document_number || 'Tanpa nomor' }}</p>
+                    </div>
+                    <span
+                      :class="[
+                        'shrink-0 rounded-full px-2 py-1 text-[10px] font-semibold',
+                        document.is_verified ? 'bg-primary-50 text-primary-700' : 'bg-amber-50 text-amber-700',
+                      ]"
+                    >
+                      {{ document.is_verified ? 'Terverifikasi' : 'Belum diverifikasi' }}
+                    </span>
+                    <button
+                      v-if="!document.is_verified"
+                      type="button"
+                      title="Tandai terverifikasi"
+                      :disabled="customers.store.verifyingDocument === document.id"
+                      class="grid h-8 w-8 shrink-0 place-items-center rounded-md text-neutral-500 hover:bg-neutral-100 disabled:opacity-50"
+                      @click="customers.verifyDocument(document.id)"
+                    >
+                      <BadgeCheck :size="15" />
+                    </button>
+                    <button
+                      type="button"
+                      title="Hapus dokumen"
+                      :disabled="customers.store.deletingDocument === document.id"
+                      class="grid h-8 w-8 shrink-0 place-items-center rounded-md text-neutral-400 hover:bg-red-50 hover:text-danger-500 disabled:opacity-50"
+                      @click="customers.removeDocument(document.id)"
+                    >
+                      <Trash2 :size="15" />
+                    </button>
+                  </article>
+
+                  <p v-if="!customers.documents.length" class="text-xs text-neutral-500">
+                    Belum ada dokumen identitas yang tersimpan.
+                  </p>
+                </div>
+
+                <div class="grid gap-3 rounded-md border border-dashed border-neutral-300 p-4">
+                  <div class="grid grid-cols-2 gap-3 max-sm:grid-cols-1">
+                    <AtomsAppSelect
+                      v-model="customers.documentForm.document_type"
+                      label="Jenis dokumen"
+                      :options="customers.documentTypeOptions"
+                    />
+                    <AtomsAppInput
+                      v-model="customers.documentForm.document_number"
+                      label="Nomor dokumen"
+                      placeholder="NIK / nomor KTP"
+                    />
+                  </div>
+                  <div class="grid grid-cols-2 gap-3 max-sm:grid-cols-1">
+                    <label class="grid gap-2 text-sm font-medium text-neutral-700">
+                      Foto depan
+                      <input
+                        type="file"
+                        accept="image/*"
+                        class="text-xs text-neutral-600"
+                        @change="customers.setDocumentFront((($event.target as HTMLInputElement).files || [])[0] || null)"
+                      />
+                    </label>
+                    <label class="grid gap-2 text-sm font-medium text-neutral-700">
+                      Foto belakang (opsional)
+                      <input
+                        type="file"
+                        accept="image/*"
+                        class="text-xs text-neutral-600"
+                        @change="customers.setDocumentBack((($event.target as HTMLInputElement).files || [])[0] || null)"
+                      />
+                    </label>
+                  </div>
+                  <AtomsAppButton
+                    type="button"
+                    variant="secondary"
+                    :disabled="customers.store.uploadingDocument"
+                    @click="customers.submitDocument"
+                  >
+                    <LoaderCircle v-if="customers.store.uploadingDocument" :size="15" class="mr-2 animate-spin" />
+                    <Upload v-else :size="15" class="mr-2" />
+                    {{ customers.store.uploadingDocument ? 'Mengunggah...' : 'Simpan dokumen' }}
+                  </AtomsAppButton>
+                </div>
+              </section>
             </div>
           </div>
 
           <footer class="flex shrink-0 justify-end gap-3 border-t border-neutral-200 bg-neutral-50 px-5 py-4 sm:px-6">
-            <AtomsAppButton variant="secondary" :disabled="customers.store.creating" @click="customers.closeCreate">
+            <AtomsAppButton variant="secondary" :disabled="customers.store.creating || customers.store.updating" @click="customers.closeCreate">
               Batal
             </AtomsAppButton>
-            <AtomsAppButton type="submit" :disabled="customers.store.creating">
-              <LoaderCircle v-if="customers.store.creating" :size="16" class="mr-2 animate-spin" />
+            <AtomsAppButton type="submit" :disabled="customers.store.creating || customers.store.updating">
+              <LoaderCircle v-if="customers.store.creating || customers.store.updating" :size="16" class="mr-2 animate-spin" />
               <UserRoundPlus v-else :size="16" class="mr-2" />
-              {{ customers.store.creating ? 'Menyimpan...' : 'Simpan pelanggan' }}
+              {{
+                customers.store.creating || customers.store.updating
+                  ? 'Menyimpan...'
+                  : customers.mode === 'edit' ? 'Perbarui pelanggan' : 'Simpan pelanggan'
+              }}
             </AtomsAppButton>
           </footer>
         </form>
