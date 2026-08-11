@@ -190,7 +190,7 @@ export function useBookingPresenter() {
       const code = bookingCode(booking).toLowerCase()
       const customer = customerName(booking).toLowerCase()
       const productsText = (booking.items || [])
-        .map((item) => item.product?.name || '')
+        .map((item) => item.product_name || item.product?.name || '')
         .join(' ')
         .toLowerCase()
       const matchesSearch = !keyword || [code, customer, productsText].some((value) => value.includes(keyword))

@@ -30,7 +30,7 @@ import {
   UserRoundPlus,
   X,
 } from '@lucide/vue'
-import type { Booking } from '~/domain/booking'
+import type { Booking, BookingItem } from '~/domain/booking'
 import { useBookingPresenter } from '~/application/bookings/useBookingPresenter'
 
 const props = withDefaults(
@@ -68,11 +68,38 @@ const checkoutPaymentMethods = [
 ]
 
 function productSummary(booking: Booking) {
-  const names = (booking.items || []).map((item) => item.product?.name).filter(Boolean)
+  const names = (booking.items || []).map((item) => item.product_name || item.product?.name).filter(Boolean)
   if (names.length) return names.join(', ')
   const count = booking.items?.length || 0
   return count ? `${count} item booking` : 'Detail produk belum tersedia'
 }
+
+const handoverChecklist = reactive<Record<string, boolean>>({})
+
+function itemKey(item: BookingItem) {
+  return String(item.id ?? `${item.product_id}-${item.product_unit_id || 0}`)
+}
+
+function itemChecklistLabel(item: BookingItem) {
+  const name = item.product_name || item.product?.name || `Produk #${item.product_id}`
+  const unit = item.product_unit?.unit_code || item.units?.map((unit) => unit.unit_code || `#${unit.id}`).join(', ')
+  return unit ? `${name} · ${unit}` : name
+}
+
+const needsChecklist = computed(() => bookings.actionTarget === 'checkOut' || bookings.actionTarget === 'return')
+const checklistItems = computed(() => bookings.currentBooking?.items || [])
+const allChecked = computed(() =>
+  checklistItems.value.length > 0 && checklistItems.value.every((item) => handoverChecklist[itemKey(item)]),
+)
+
+watch(
+  () => bookings.actionTarget,
+  (action) => {
+    if (action !== 'checkOut' && action !== 'return') return
+    Object.keys(handoverChecklist).forEach((key) => delete handoverChecklist[key])
+    for (const item of checklistItems.value) handoverChecklist[itemKey(item)] = false
+  },
+)
 
 async function initialize() {
   await bookings.initialize()
@@ -1126,10 +1153,10 @@ watch(
                   >
                     <div class="min-w-0">
                       <h4 class="truncate text-sm font-semibold text-neutral-900">
-                        {{ item.product?.name || `Produk #${item.product_id}` }}
+                        {{ item.product_name || item.product?.name || `Produk #${item.product_id}` }}
                       </h4>
                       <p class="mt-1 text-xs text-neutral-500">
-                        {{ item.product?.sku || 'SKU tidak tersedia' }}
+                        {{ item.sku || item.product?.sku || 'SKU tidak tersedia' }}
                         <template v-if="item.pricing_type"> · {{ item.pricing_type.replace(/_/g, ' ') }}</template>
                       </p>
                       <p v-if="item.product_unit || item.units?.length" class="mt-2 text-xs font-medium text-primary-700">
@@ -1345,7 +1372,7 @@ watch(
           class="absolute inset-0 bg-neutral-900/50 backdrop-blur-[2px]"
           @click="bookings.cancelStatusAction"
         ></button>
-        <section class="relative w-full max-w-md rounded-lg border border-neutral-200 bg-neutral-0 p-6 shadow-2xl">
+        <section class="relative w-full max-w-md rounded-lg border border-neutral-200 bg-neutral-0 p-6 shadow-2xl max-h-[85vh] overflow-y-auto">
           <span
             :class="[
               'grid h-11 w-11 place-items-center rounded-md',
@@ -1374,6 +1401,33 @@ watch(
                   : `${bookings.bookingCode(bookings.currentBooking)} akan diproses sebagai dikembalikan.`
             }}
           </p>
+
+          <div v-if="needsChecklist" class="mt-4 grid gap-1 rounded-md border border-neutral-200 p-3">
+            <p class="mb-1 text-xs font-semibold text-neutral-700">
+              {{
+                bookings.actionTarget === 'checkOut'
+                  ? 'Centang produk yang diserahkan ke pelanggan:'
+                  : 'Centang produk yang dikembalikan pelanggan:'
+              }}
+            </p>
+            <label
+              v-for="item in checklistItems"
+              :key="itemKey(item)"
+              class="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-neutral-700 hover:bg-neutral-50"
+            >
+              <input
+                v-model="handoverChecklist[itemKey(item)]"
+                type="checkbox"
+                class="h-4 w-4 rounded border-neutral-300 text-primary-600 focus:ring-primary-500"
+              />
+              <span class="min-w-0 flex-1 truncate">{{ itemChecklistLabel(item) }}</span>
+              <span class="shrink-0 text-xs text-neutral-400">×{{ item.quantity || 1 }}</span>
+            </label>
+            <p v-if="!allChecked" class="mt-1 text-[11px] font-medium text-amber-600">
+              Semua item harus dicentang sebelum melanjutkan.
+            </p>
+          </div>
+
           <div class="mt-6 flex justify-end gap-2">
             <AtomsAppButton
               variant="ghost"
@@ -1384,7 +1438,7 @@ watch(
             </AtomsAppButton>
             <button
               type="button"
-              :disabled="Boolean(bookings.store.updatingStatus)"
+              :disabled="Boolean(bookings.store.updatingStatus) || (needsChecklist && !allChecked)"
               :class="[
                 'inline-flex min-h-11 items-center rounded-md px-4 text-sm font-semibold text-white disabled:cursor-wait disabled:opacity-60',
                 bookings.actionTarget === 'cancel' ? 'bg-danger-500 hover:bg-red-700' : 'bg-primary-600 hover:bg-primary-700',
