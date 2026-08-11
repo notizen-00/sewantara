@@ -24,6 +24,7 @@ class ProductController extends Controller
                 ? $request->boolean('is_active')
                 : null,
             perPage: $request->integer('per_page', 20),
+            branchId: $request->integer('branch_id') ?: null,
         );
 
         return response()->json(['success' => true, 'data' => $result]);

@@ -314,7 +314,7 @@ export function useBookingPresenter() {
       fetchAll(false),
       store.fetchCustomers(),
       store.fetchPrices(),
-      products.fetchProducts({ is_active: true, per_page: 100 }),
+      products.fetchProducts({ is_active: true, per_page: 100, branch_id: Number(auth.branchId) }),
       products.fetchCategories({ is_active: true, per_page: 100 }),
       engines.fetchCatalog(),
     ])

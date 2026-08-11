@@ -233,7 +233,7 @@ export function useBookingCalendarPresenter() {
 
     const results = await Promise.allSettled([
       fetchMonth(false),
-      products.fetchProducts({ is_active: true, per_page: 100 }),
+      products.fetchProducts({ is_active: true, per_page: 100, branch_id: Number(auth.branchId) }),
     ])
     initializedContext.value = contextKey.value
 

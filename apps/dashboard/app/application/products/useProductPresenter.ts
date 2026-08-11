@@ -113,6 +113,7 @@ export function useProductPresenter() {
     categoryId: null as number | null,
     inventoryType: '' as InventoryType | '',
     isActive: '' as boolean | '',
+    onlyCurrentBranch: true,
   })
   const categorySearch = ref('')
   let filterTimer: ReturnType<typeof setTimeout> | null = null
@@ -176,6 +177,7 @@ export function useProductPresenter() {
       inventory_type: filters.inventoryType,
       is_active: filters.isActive,
       per_page: 50,
+      branch_id: filters.onlyCurrentBranch ? Number(auth.branchId) : undefined,
     }
   }
 
@@ -364,7 +366,11 @@ export function useProductPresenter() {
         }
         closeEditor()
         await fetchProducts(false)
-        snackbar.success(`Produk berhasil ${wasEditing ? 'diperbarui' : 'ditambahkan'}.`)
+        snackbar.success(
+          wasEditing
+            ? 'Produk berhasil diperbarui.'
+            : 'Produk berhasil ditambahkan. Tambahkan unit/stok di menu Inventory agar muncul di katalog cabang ini.',
+        )
       } else if (editor.value === 'category') {
         const payload = toCategoryPayload()
         if (!payload) return
@@ -501,6 +507,7 @@ export function useProductPresenter() {
     filters.categoryId = null
     filters.inventoryType = ''
     filters.isActive = ''
+    filters.onlyCurrentBranch = true
   }
 
   function formatCurrency(value: number | string) {
@@ -512,7 +519,7 @@ export function useProductPresenter() {
   }
 
   watch(
-    () => [filters.search, filters.categoryId, filters.inventoryType, filters.isActive],
+    () => [filters.search, filters.categoryId, filters.inventoryType, filters.isActive, filters.onlyCurrentBranch],
     () => {
       if (filterTimer) clearTimeout(filterTimer)
       filterTimer = setTimeout(() => fetchProducts(), 350)

@@ -270,6 +270,71 @@ test('inventory API adjusts conditions transfers stock and reports every branch'
         ->assertJsonPath('data.branch_id', 2);
 });
 
+test('product listing hides products absent from the requested branch', function () {
+    DB::table('branches')->insert([
+        'id' => 2,
+        'tenant_id' => 'tenant-a',
+        'name' => 'Cabang Kedua',
+        'code' => 'SECOND',
+        'is_active' => true,
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    $stockedInBranchOne = $this->postJson('/api/tenant/tenant-a/products', [
+        'name' => 'Tripod',
+        'engine_code' => 'rental',
+        'product_type' => 'equipment',
+        'inventory_type' => 'quantity',
+        'default_pricing_type' => 'daily',
+    ], $this->headers)->assertCreated()->json('data.id');
+
+    $this->postJson('/api/tenant/tenant-a/inventory/stocks/adjust', [
+        'product_id' => $stockedInBranchOne,
+        'quantity' => 5,
+        'reason_type' => 'purchase',
+    ], $this->headers)->assertOk();
+
+    $stockedInBranchTwo = $this->postJson('/api/tenant/tenant-a/products', [
+        'name' => 'Sony A7 IV',
+        'engine_code' => 'rental',
+        'product_type' => 'equipment',
+        'inventory_type' => 'serialized',
+        'default_pricing_type' => 'daily',
+    ], $this->headers)->assertCreated()->json('data.id');
+
+    DB::table('product_units')->insert([
+        'tenant_id' => 'tenant-a',
+        'product_id' => $stockedInBranchTwo,
+        'branch_id' => 2,
+        'status' => 'available',
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    $this->postJson('/api/tenant/tenant-a/products', [
+        'name' => 'Drone Baru',
+        'engine_code' => 'rental',
+        'product_type' => 'equipment',
+        'inventory_type' => 'serialized',
+        'default_pricing_type' => 'daily',
+    ], $this->headers)->assertCreated()->json('data.id');
+
+    $this->getJson('/api/tenant/tenant-a/products?branch_id=1', $this->headers)
+        ->assertOk()
+        ->assertJsonCount(1, 'data.data')
+        ->assertJsonPath('data.data.0.id', $stockedInBranchOne);
+
+    $this->getJson('/api/tenant/tenant-a/products?branch_id=2', $this->headers)
+        ->assertOk()
+        ->assertJsonCount(1, 'data.data')
+        ->assertJsonPath('data.data.0.id', $stockedInBranchTwo);
+
+    $this->getJson('/api/tenant/tenant-a/products', $this->headers)
+        ->assertOk()
+        ->assertJsonCount(3, 'data.data');
+});
+
 function createProductCrudTestTables(): void
 {
     Schema::create('users', function (Blueprint $table): void {

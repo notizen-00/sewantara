@@ -25,6 +25,7 @@ class ManageProducts
         ?string $inventoryType,
         ?bool $isActive,
         int $perPage = 20,
+        ?int $branchId = null,
     ): LengthAwarePaginator {
         return Product::query()
             ->with(['category', 'images'])
@@ -39,6 +40,17 @@ class ManageProducts
             ->when($categoryId, fn ($query, int $value) => $query->where('category_id', $value))
             ->when($inventoryType, fn ($query, string $value) => $query->where('inventory_type', $value))
             ->when($isActive !== null, fn ($query) => $query->where('is_active', $isActive))
+            ->when($branchId, fn ($query, int $value) => $query->where(
+                fn ($query) => $query
+                    ->where(
+                        fn ($query) => $query->where('inventory_type', 'serialized')
+                            ->whereHas('units', fn ($units) => $units->where('branch_id', $value)),
+                    )
+                    ->orWhere(
+                        fn ($query) => $query->where('inventory_type', 'quantity')
+                            ->whereHas('inventoryStocks', fn ($stocks) => $stocks->where('branch_id', $value)),
+                    ),
+            ))
             ->latest()
             ->paginate(min(max($perPage, 1), 100));
     }

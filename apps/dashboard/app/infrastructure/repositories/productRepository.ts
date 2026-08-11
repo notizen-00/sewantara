@@ -23,6 +23,7 @@ export function useProductRepository() {
           inventory_type: query.inventory_type,
           is_active: query.is_active,
           per_page: query.per_page,
+          branch_id: query.branch_id,
         },
       }),
     getProduct: (id: number) => api.tenant<Product>(`/products/${id}`),

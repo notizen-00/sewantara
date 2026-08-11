@@ -86,6 +86,8 @@ export interface ProductListQuery {
   inventory_type?: InventoryType | ''
   is_active?: boolean | ''
   per_page?: number
+  /** Saat diisi, hanya produk yang punya unit/stok di cabang ini yang dikembalikan. */
+  branch_id?: number | null
 }
 
 export interface CategoryListQuery {

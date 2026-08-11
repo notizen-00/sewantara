@@ -224,6 +224,35 @@ onMounted(() => {
           </button>
         </div>
 
+        <label class="flex cursor-pointer items-center justify-between gap-3 border-b border-neutral-200 bg-neutral-50 px-4 py-3">
+          <span class="min-w-0">
+            <span class="block text-sm font-medium text-neutral-700">
+              Hanya tampilkan produk yang punya unit/stok di {{ products.auth.activeWorkspace.branchName || 'cabang aktif' }}
+            </span>
+            <span class="mt-0.5 block text-xs text-neutral-500">
+              Matikan untuk melihat seluruh katalog tenant, termasuk produk yang belum diisi stok cabang ini.
+            </span>
+          </span>
+          <span class="flex shrink-0 items-center gap-2">
+            <input v-model="products.filters.onlyCurrentBranch" type="checkbox" class="sr-only" />
+            <span
+              role="switch"
+              :aria-checked="products.filters.onlyCurrentBranch"
+              :class="[
+                'relative h-6 w-11 shrink-0 rounded-full transition',
+                products.filters.onlyCurrentBranch ? 'bg-primary-600' : 'bg-neutral-200',
+              ]"
+            >
+              <span
+                :class="[
+                  'absolute top-1 h-4 w-4 rounded-full bg-white shadow-sm transition-transform',
+                  products.filters.onlyCurrentBranch ? 'translate-x-6' : 'translate-x-1',
+                ]"
+              ></span>
+            </span>
+          </span>
+        </label>
+
         <div v-if="products.store.loadingProducts" class="grid min-h-72 place-items-center">
           <div class="text-center">
             <LoaderCircle :size="26" class="mx-auto animate-spin text-primary-600" />
@@ -241,7 +270,12 @@ onMounted(() => {
             </span>
             <h2 class="mt-4 text-base font-semibold text-neutral-900">Belum ada produk ditemukan</h2>
             <p class="mt-2 text-sm leading-6 text-neutral-500">
-              Tambahkan produk pertama atau ubah filter pencarian untuk melihat hasil lain.
+              <template v-if="products.filters.onlyCurrentBranch">
+                Belum ada produk dengan stok di cabang ini. Matikan filter cabang di atas untuk melihat seluruh katalog, atau tambahkan produk baru lalu isi stoknya lewat menu Inventory.
+              </template>
+              <template v-else>
+                Tambahkan produk pertama atau ubah filter pencarian untuk melihat hasil lain.
+              </template>
             </p>
             <AtomsAppButton class="mt-5" @click="products.openProductEditor()">
               <Plus :size="16" class="mr-2" />
