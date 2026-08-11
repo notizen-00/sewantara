@@ -1300,6 +1300,14 @@ watch(
                 Batalkan booking
               </button>
               <AtomsAppButton
+                v-if="bookings.canCheckOut"
+                :disabled="Boolean(bookings.store.updatingStatus)"
+                @click="bookings.requestStatusAction('checkOut')"
+              >
+                <PackageOpen :size="16" class="mr-2" />
+                Serahkan ke pelanggan
+              </AtomsAppButton>
+              <AtomsAppButton
                 v-if="bookings.canReturn"
                 :disabled="Boolean(bookings.store.updatingStatus)"
                 @click="bookings.requestStatusAction('return')"
@@ -1307,7 +1315,7 @@ watch(
                 <PackageCheck :size="16" class="mr-2" />
                 Proses pengembalian
               </AtomsAppButton>
-              <span v-if="!bookings.canCancel && !bookings.canReturn" class="text-xs font-medium text-neutral-500">
+              <span v-if="!bookings.canCancel && !bookings.canCheckOut && !bookings.canReturn" class="text-xs font-medium text-neutral-500">
                 Tidak ada aksi status untuk kondisi ini.
               </span>
             </div>
@@ -1332,16 +1340,25 @@ watch(
             ]"
           >
             <CircleX v-if="bookings.actionTarget === 'cancel'" :size="20" />
+            <PackageOpen v-else-if="bookings.actionTarget === 'checkOut'" :size="20" />
             <PackageCheck v-else :size="20" />
           </span>
           <h2 class="mt-4 text-lg font-semibold text-neutral-900">
-            {{ bookings.actionTarget === 'cancel' ? 'Batalkan booking?' : 'Proses pengembalian?' }}
+            {{
+              bookings.actionTarget === 'cancel'
+                ? 'Batalkan booking?'
+                : bookings.actionTarget === 'checkOut'
+                  ? 'Serahkan barang ke pelanggan?'
+                  : 'Proses pengembalian?'
+            }}
           </h2>
           <p class="mt-2 text-sm leading-6 text-neutral-500">
             {{
               bookings.actionTarget === 'cancel'
                 ? `${bookings.bookingCode(bookings.currentBooking)} akan dibatalkan melalui endpoint cancel resmi.`
-                : `${bookings.bookingCode(bookings.currentBooking)} akan diproses sebagai dikembalikan.`
+                : bookings.actionTarget === 'checkOut'
+                  ? `${bookings.bookingCode(bookings.currentBooking)} akan berpindah ke status berjalan setelah barang diserahkan.`
+                  : `${bookings.bookingCode(bookings.currentBooking)} akan diproses sebagai dikembalikan.`
             }}
           </p>
           <div class="mt-6 flex justify-end gap-2">

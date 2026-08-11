@@ -32,7 +32,7 @@ export const useBookingStore = defineStore('bookings', () => {
   const loadingPrices = ref(false)
   const checkingAvailability = ref(false)
   const creating = ref(false)
-  const updatingStatus = ref<'cancel' | 'return' | null>(null)
+  const updatingStatus = ref<'checkOut' | 'cancel' | 'return' | null>(null)
   const recordingPayment = ref(false)
   const availability = ref<AvailabilityResult | null>(null)
   const availabilityResults = ref<Record<number, AvailabilityResult>>({})
@@ -151,13 +151,15 @@ export const useBookingStore = defineStore('bookings', () => {
     }
   }
 
-  async function changeStatus(action: 'cancel' | 'return', id: number) {
+  async function changeStatus(action: 'checkOut' | 'cancel' | 'return', id: number) {
     updatingStatus.value = action
     error.value = ''
     try {
-      const response = action === 'cancel'
-        ? await useBookingRepository().cancel(id)
-        : await useBookingRepository().returnBooking(id)
+      const response = action === 'checkOut'
+        ? await useBookingRepository().checkOut(id)
+        : action === 'cancel'
+          ? await useBookingRepository().cancel(id)
+          : await useBookingRepository().returnBooking(id)
       if (response.data) detail.value = response.data
       return response.data
     } catch (err) {

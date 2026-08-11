@@ -12,7 +12,7 @@ import type { SalesOrderCreatePayload } from '~/domain/sales'
 import { PRICING_TYPE_LABELS } from '~/domain/pricing'
 
 type AvailabilityState = 'idle' | 'available' | 'unavailable'
-type BookingAction = 'cancel' | 'return'
+type BookingAction = 'checkOut' | 'cancel' | 'return'
 type PosPaymentMode = 'unpaid' | 'full' | 'deposit'
 type PosPaymentMethod = 'cash' | 'transfer'
 type TransactionMode = 'booking' | 'sales'
@@ -259,14 +259,18 @@ export function useBookingPresenter() {
       .map((entry, index) => normalizeHistory(entry, index))
       .sort((left, right) => new Date(right.timestamp || 0).getTime() - new Date(left.timestamp || 0).getTime())
   })
-  const canCancel = computed(() => {
-    const status = normalizeStatus(currentBooking.value?.status || '')
-    return Boolean(status) && !['cancelled', 'canceled', 'completed', 'finished', 'returned', 'expired'].includes(status)
-  })
-  const canReturn = computed(() =>
-    ['confirmed', 'paid', 'active', 'ongoing', 'rented'].includes(
+  const canCheckOut = computed(() =>
+    ['pending', 'confirmed', 'preparing', 'ready'].includes(
       normalizeStatus(currentBooking.value?.status || ''),
     ),
+  )
+  const canCancel = computed(() =>
+    ['draft', 'pending', 'confirmed', 'preparing', 'ready'].includes(
+      normalizeStatus(currentBooking.value?.status || ''),
+    ),
+  )
+  const canReturn = computed(() =>
+    normalizeStatus(currentBooking.value?.status || '') === 'ongoing',
   )
   const paidAmount = computed(() => {
     const booking = currentBooking.value
@@ -364,12 +368,16 @@ export function useBookingPresenter() {
   }
 
   function requestStatusAction(action: BookingAction) {
+    if (action === 'checkOut' && !canCheckOut.value) {
+      snackbar.warning('Booking dengan status ini tidak dapat diproses.')
+      return
+    }
     if (action === 'cancel' && !canCancel.value) {
       snackbar.warning('Booking dengan status ini tidak dapat dibatalkan.')
       return
     }
     if (action === 'return' && !canReturn.value) {
-      snackbar.warning('Booking belum berada pada status yang dapat dikembalikan.')
+      snackbar.warning('Hanya booking yang sedang berjalan yang dapat dikembalikan.')
       return
     }
     actionTarget.value = action
@@ -387,10 +395,12 @@ export function useBookingPresenter() {
     try {
       await store.changeStatus(action, booking.id)
       actionTarget.value = null
-      snackbar.success(
-        action === 'cancel' ? 'Booking berhasil dibatalkan.' : 'Pengembalian booking berhasil diproses.',
-        'Status diperbarui',
-      )
+      const messages: Record<BookingAction, string> = {
+        checkOut: 'Barang berhasil diserahkan. Booking kini sedang berjalan.',
+        cancel: 'Booking berhasil dibatalkan.',
+        return: 'Pengembalian booking berhasil diproses.',
+      }
+      snackbar.success(messages[action], 'Status diperbarui')
       try {
         await Promise.all([store.fetchDetail(booking.id), fetchAll(false)])
       } catch {
@@ -947,6 +957,7 @@ export function useBookingPresenter() {
     completedCount,
     availabilityState,
     historyEntries,
+    canCheckOut,
     canCancel,
     canReturn,
     paidAmount,

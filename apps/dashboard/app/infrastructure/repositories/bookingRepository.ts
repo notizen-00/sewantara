@@ -32,6 +32,8 @@ export function useBookingRepository() {
         method: 'POST',
         body: JSON.stringify(payload),
       }),
+    checkOut: (id: number) =>
+      api.tenant<Booking>(`/bookings/${id}/check-out`, { method: 'POST' }),
     cancel: (id: number) =>
       api.tenant<Booking>(`/bookings/${id}/cancel`, { method: 'POST' }),
     returnBooking: (id: number) =>
