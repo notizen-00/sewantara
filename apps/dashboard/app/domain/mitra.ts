@@ -313,10 +313,35 @@ export interface PaymentsOnboardingPayload {
   }>
 }
 
+export interface OverdueBookingItem {
+  product_name: string
+  quantity: number
+}
+
+export interface OverdueBookingReminder {
+  id: number
+  booking_number: string
+  customer_id: number
+  customer_name: string | null
+  customer_phone: string | null
+  end_at: string | null
+  days_late: number
+  items: OverdueBookingItem[]
+}
+
 export interface DashboardReport {
   revenue?: number
   bookings?: number
   active_rentals?: number
   available_units?: number
+  summary?: {
+    products?: number
+    customers?: number
+    active_bookings?: number
+    revenue_paid?: number
+    deposit_held?: number
+    overdue_bookings?: number
+  }
+  overdue_bookings?: OverdueBookingReminder[]
   [key: string]: unknown
 }

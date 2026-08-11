@@ -11,9 +11,11 @@ import {
   Crown,
   PackageCheck,
   PackageOpen,
+  PhoneCall,
   RefreshCw,
   Settings,
   Tags,
+  TriangleAlert,
   Users,
   UserCog,
   WalletCards,
@@ -44,6 +46,16 @@ interface SubscriptionSummary {
   checked: boolean
 }
 
+interface OverdueReminder {
+  id: number
+  bookingNumber: string
+  customerName: string
+  customerPhone: string
+  daysLate: number
+  dueLabel: string
+  itemsSummary: string
+}
+
 const props = defineProps<{
   section: string
   metrics: DashboardMetric[]
@@ -51,6 +63,8 @@ const props = defineProps<{
   tenantSite: TenantSite | null
   loading?: boolean
   bookingCreateRequest?: number
+  overdueReminders?: OverdueReminder[]
+  overdueCount?: number
 }>()
 
 defineEmits<{
@@ -121,6 +135,8 @@ const metricByKey = computed(() => Object.fromEntries(props.metrics.map((metric)
 const activeRentals = computed(() => Number(metricByKey.value.active_rentals || 0))
 const availableUnits = computed(() => Number(metricByKey.value.available_units || 0))
 const recordedBookings = computed(() => Number(metricByKey.value.bookings || 0))
+const overdueReminderList = computed(() => props.overdueReminders || [])
+const overdueReminderCount = computed(() => props.overdueCount ?? overdueReminderList.value.length)
 
 const currentDate = new Intl.DateTimeFormat('id-ID', {
   weekday: 'long',
@@ -305,6 +321,78 @@ const currentDate = new Intl.DateTimeFormat('id-ID', {
         </section>
       </div>
     </div>
+
+    <section
+      class="rounded-sm border shadow-card"
+      :class="overdueReminderCount > 0 ? 'border-red-200 bg-red-50/40' : 'border-neutral-200 bg-neutral-0'"
+    >
+      <div class="flex flex-wrap items-center justify-between gap-3 border-b px-5 py-4" :class="overdueReminderCount > 0 ? 'border-red-200' : 'border-neutral-200'">
+        <div class="flex items-center gap-3">
+          <span
+            class="grid h-10 w-10 shrink-0 place-items-center rounded-md"
+            :class="overdueReminderCount > 0 ? 'bg-red-100 text-danger-500' : 'bg-neutral-100 text-neutral-500'"
+          >
+            <TriangleAlert :size="18" />
+          </span>
+          <div>
+            <h2 class="text-base font-semibold text-neutral-900">Reminder keterlambatan customer</h2>
+            <p class="mt-1 text-sm text-neutral-500">Booking yang belum dikembalikan melewati jadwal seharusnya.</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-3">
+          <span
+            v-if="overdueReminderCount > 0"
+            class="rounded-full bg-red-100 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-danger-500"
+          >
+            {{ overdueReminderCount }} terlambat
+          </span>
+          <button
+            type="button"
+            class="text-sm font-semibold text-primary-700 hover:text-primary-600"
+            @click="$emit('navigate', 'bookings')"
+          >
+            Lihat semua booking
+          </button>
+        </div>
+      </div>
+      <div v-if="overdueReminderList.length" class="divide-y divide-red-100">
+        <div
+          v-for="reminder in overdueReminderList"
+          :key="reminder.id"
+          class="flex flex-wrap items-center justify-between gap-3 px-5 py-4"
+        >
+          <div class="min-w-0">
+            <div class="flex flex-wrap items-center gap-2">
+              <p class="font-semibold text-neutral-900">{{ reminder.customerName }}</p>
+              <span class="rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-danger-500">
+                Telat {{ reminder.daysLate }} hari
+              </span>
+            </div>
+            <p class="mt-1 text-xs text-neutral-500">{{ reminder.bookingNumber }} · {{ reminder.itemsSummary }}</p>
+            <p class="mt-1 text-xs text-neutral-500">Jadwal kembali: {{ reminder.dueLabel }}</p>
+          </div>
+          <a
+            v-if="reminder.customerPhone"
+            :href="`https://wa.me/${reminder.customerPhone.replace(/^0/, '62').replace(/[^0-9]/g, '')}`"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="inline-flex min-h-9 items-center gap-2 rounded-sm border border-red-200 bg-neutral-0 px-3 text-sm font-semibold text-danger-500 hover:bg-red-50"
+          >
+            <PhoneCall :size="15" />
+            Hubungi
+          </a>
+        </div>
+      </div>
+      <div v-else class="grid min-h-32 place-items-center px-5 py-8 text-center">
+        <div>
+          <span class="mx-auto grid h-11 w-11 place-items-center rounded-full bg-neutral-100 text-neutral-500">
+            <TriangleAlert :size="20" />
+          </span>
+          <p class="mt-3 text-sm font-semibold text-neutral-900">Tidak ada keterlambatan saat ini</p>
+          <p class="mt-1 text-xs text-neutral-500">Semua booking dikembalikan sesuai jadwal.</p>
+        </div>
+      </div>
+    </section>
 
     <section class="rounded-sm border border-neutral-200 bg-neutral-0 shadow-card">
       <div class="flex flex-wrap items-center justify-between gap-3 border-b border-neutral-200 px-5 py-4">

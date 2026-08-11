@@ -53,6 +53,8 @@ useHead({
           :section="activeSection"
           :metrics="dashboard.metricCards"
           :subscription="dashboard.subscriptionSummary"
+          :overdue-reminders="dashboard.overdueReminders"
+          :overdue-count="dashboard.overdueBookingsCount"
           :tenant-site="dashboard.tenantSite"
           :loading="dashboard.operations.loading"
           :booking-create-request="bookingCreateRequest"

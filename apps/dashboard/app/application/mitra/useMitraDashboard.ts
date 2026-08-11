@@ -2,6 +2,7 @@ import type {
   BookingOnboardingPayload,
   BusinessOnboardingPayload,
   EngineCode,
+  OverdueBookingReminder,
   PaymentsOnboardingPayload,
   PricingType,
   ProductType,
@@ -382,6 +383,22 @@ function createMitraDashboard() {
       caption: 'Siap disewa',
     },
   ])
+
+  const overdueBookingsCount = computed(() =>
+    Number(operations.dashboard?.summary?.overdue_bookings ?? operations.dashboard?.overdue_bookings?.length ?? 0),
+  )
+
+  const overdueReminders = computed(() =>
+    (operations.dashboard?.overdue_bookings || []).map((booking: OverdueBookingReminder) => ({
+      id: booking.id,
+      bookingNumber: booking.booking_number,
+      customerName: booking.customer_name || 'Pelanggan',
+      customerPhone: booking.customer_phone || '',
+      daysLate: booking.days_late,
+      dueLabel: booking.end_at ? formatDate(booking.end_at) : 'Tanggal tidak tersedia',
+      itemsSummary: booking.items.map((item) => `${item.product_name} x${item.quantity}`).join(', '),
+    })),
+  )
 
   function formatCurrency(value: number) {
     return new Intl.NumberFormat('id-ID', {
@@ -1138,6 +1155,8 @@ function createMitraDashboard() {
     emailOtpVerified,
     canRequestEmailOtp,
     metricCards,
+    overdueBookingsCount,
+    overdueReminders,
     subscriptionSummary,
     onboarding,
     onboardingSteps,
