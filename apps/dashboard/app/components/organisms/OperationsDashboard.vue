@@ -425,18 +425,18 @@ const currentDate = new Intl.DateTimeFormat('id-ID', {
     @back="$emit('navigate', 'overview')"
   />
 
-  <OrganismsBookingWorkspace
+  <OrganismsBookingsWorkspace
     v-else-if="section === 'bookings'"
     :create-request="bookingCreateRequest"
     @back="$emit('navigate', 'overview')"
   />
 
-  <OrganismsBookingCalendarWorkspace
+  <OrganismsCalendarWorkspace
     v-else-if="section === 'calendar'"
     @back="$emit('navigate', 'overview')"
   />
 
-  <OrganismsProductWorkspace
+  <OrganismsProductsWorkspace
     v-else-if="section === 'products'"
     @back="$emit('navigate', 'overview')"
   />
@@ -466,12 +466,12 @@ const currentDate = new Intl.DateTimeFormat('id-ID', {
     @back="$emit('navigate', 'overview')"
   />
 
-  <OrganismsCustomerWorkspace
+  <OrganismsCustomersWorkspace
     v-else-if="section === 'customers'"
     @back="$emit('navigate', 'overview')"
   />
 
-  <OrganismsUserWorkspace
+  <OrganismsUsersWorkspace
     v-else-if="section === 'users'"
     @back="$emit('navigate', 'overview')"
   />
