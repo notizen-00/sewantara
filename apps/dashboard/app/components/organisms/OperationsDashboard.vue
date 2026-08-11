@@ -358,6 +358,11 @@ const currentDate = new Intl.DateTimeFormat('id-ID', {
     @back="$emit('navigate', 'overview')"
   />
 
+  <OrganismsMaintenanceWorkspace
+    v-else-if="section === 'maintenance'"
+    @back="$emit('navigate', 'overview')"
+  />
+
   <OrganismsInventoryWorkspace
     v-else-if="section === 'inventory'"
     @back="$emit('navigate', 'overview')"
