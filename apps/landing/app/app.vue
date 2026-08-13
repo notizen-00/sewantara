@@ -106,6 +106,21 @@ const problems = [
   },
 ];
 
+const mockupNav = [
+  { icon: "layers", label: "Dashboard", active: true },
+  { icon: "calendar", label: "Booking" },
+  { icon: "users", label: "Pelanggan" },
+  { icon: "box", label: "Produk" },
+  { icon: "inventory", label: "Inventory" },
+];
+
+const mockupMetrics = [
+  { icon: "wallet", label: "Pendapatan", value: "Rp 4,8jt" },
+  { icon: "calendar", label: "Booking", value: "18" },
+  { icon: "box", label: "Rental aktif", value: "6" },
+  { icon: "layers", label: "Unit tersedia", value: "24" },
+];
+
 const benefits = [
   {
     icon: "bolt",
@@ -522,17 +537,46 @@ useHead({
       <section id="manfaat" class="section benefits-section">
         <div class="container benefits-grid">
           <div v-reveal class="operations-visual">
-            <div class="visual-top">
-              <span class="visual-brand"><i>S</i> Sewantara Ops</span>
-              <span class="online-pill"><i /> Online</span>
-            </div>
-            <div class="warehouse-illustration">
-              <div class="shelf shelf-one"><i /><i /><i /></div>
-              <div class="shelf shelf-two"><i /><i /><i /></div>
-              <div class="operator">
-                <div class="operator-head" />
-                <div class="operator-body" />
-                <div class="operator-tablet">S</div>
+            <div
+              class="dashboard-mockup"
+              aria-hidden="true"
+            >
+              <aside class="mockup-sidebar">
+                <span class="mockup-logo">S</span>
+                <span
+                  v-for="item in mockupNav"
+                  :key="item.label"
+                  :class="['mockup-nav-item', { active: item.active }]"
+                >
+                  <svg viewBox="0 0 24 24" v-html="iconPaths[item.icon]" />
+                </span>
+              </aside>
+              <div class="mockup-main">
+                <div class="mockup-topbar">
+                  <span class="mockup-branch">
+                    <svg viewBox="0 0 24 24" v-html="iconPaths.branch" />
+                    Cabang Jember
+                  </span>
+                  <span class="mockup-kasir">Kasir</span>
+                </div>
+                <div class="mockup-content">
+                  <span class="mockup-title">Dashboard bisnis</span>
+                  <div class="mockup-cards">
+                    <div
+                      v-for="metric in mockupMetrics"
+                      :key="metric.label"
+                      class="mockup-card"
+                    >
+                      <svg viewBox="0 0 24 24" v-html="iconPaths[metric.icon]" />
+                      <strong>{{ metric.value }}</strong>
+                      <span>{{ metric.label }}</span>
+                    </div>
+                  </div>
+                  <div class="mockup-panel">
+                    <span>Kondisi operasional</span>
+                    <i /><i /><i />
+                  </div>
+                </div>
               </div>
             </div>
             <blockquote>

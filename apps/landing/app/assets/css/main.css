@@ -144,18 +144,26 @@ p, h1, h2, h3, blockquote { margin-top: 0; }
 .visual-brand i { width: 25px; height: 25px; margin-right: 5px; display: inline-grid; place-items: center; color: white; background: #16875b; border-radius: 7px; }
 .online-pill { padding: 5px 9px; color: #2c6a4f; background: rgba(255,255,255,.8); border-radius: 99px; font-size: 9px; font-weight: 700; }
 .online-pill i { width: 6px; height: 6px; margin-right: 4px; display: inline-block; background: #21b66f; border-radius: 50%; }
-.warehouse-illustration { position: absolute; inset: 0; overflow: hidden; background: linear-gradient(#eff6f2 0 12%, #d5e1da 12% 77%, #aebdb4 77%); }
-.warehouse-illustration::before { content: ""; position: absolute; inset: 12% 0 auto; height: 2px; background: #fff; box-shadow: 0 40px rgba(255,255,255,.5), 0 80px rgba(255,255,255,.4); }
-.shelf { position: absolute; top: 90px; width: 110px; height: 240px; border: 7px solid #718a7e; border-top-width: 10px; background: repeating-linear-gradient(to bottom, transparent 0 65px, #718a7e 66px 73px); }
-.shelf-one { left: 26px; }
-.shelf-two { right: 26px; }
-.shelf i { position: relative; width: 72px; height: 46px; margin: 15px auto 20px; display: block; background: #e7a24e; border-radius: 4px; box-shadow: inset 0 -7px rgba(122,72,25,.15); }
-.operator { position: absolute; top: 118px; left: 50%; width: 150px; height: 270px; transform: translateX(-50%); }
-.operator-head { position: absolute; z-index: 2; top: 0; left: 46px; width: 62px; height: 74px; border-radius: 45% 45% 40% 40%; background: radial-gradient(circle at 65% 38%, #35231f 0 3%, transparent 4%), radial-gradient(circle at 35% 38%, #35231f 0 3%, transparent 4%), linear-gradient(#4b2f27 0 22%, #d99d7d 23%); box-shadow: 0 -12px 0 3px #38221f; }
-.operator-head::after { content: ""; position: absolute; left: 25px; bottom: 17px; width: 17px; height: 7px; border-bottom: 2px solid #fff; border-radius: 50%; }
-.operator-body { position: absolute; top: 65px; left: 16px; width: 120px; height: 180px; background: linear-gradient(110deg, #08784e, #1a9b69); border-radius: 38px 38px 14px 14px; }
-.operator-body::after { content: "sewantara"; position: absolute; top: 27px; left: 35px; color: #fff; font-size: 9px; font-weight: 800; }
-.operator-tablet { position: absolute; z-index: 3; right: -6px; top: 122px; width: 74px; height: 105px; display: grid; place-items: center; color: var(--primary); background: #f8fbf9; border: 6px solid #26332d; border-radius: 8px; font-size: 25px; font-weight: 900; transform: rotate(7deg); }
+.dashboard-mockup { position: absolute; inset: 0; display: flex; background: #fff; }
+.mockup-sidebar { flex-shrink: 0; width: 58px; display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 20px 0; border-right: 1px solid var(--border); }
+.mockup-logo { width: 28px; height: 28px; display: grid; place-items: center; color: #fff; background: var(--primary); border-radius: 9px; font-size: 13px; font-weight: 800; }
+.mockup-nav-item { width: 32px; height: 32px; display: grid; place-items: center; color: var(--muted); border-radius: 10px; }
+.mockup-nav-item svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.mockup-nav-item.active { color: var(--primary); background: var(--primary-soft); }
+.mockup-main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.mockup-topbar { flex-shrink: 0; height: 42px; display: flex; align-items: center; justify-content: space-between; padding: 0 16px; border-bottom: 1px solid var(--border); }
+.mockup-branch { display: flex; align-items: center; gap: 6px; color: var(--ink); font-size: 11px; font-weight: 700; }
+.mockup-branch svg { width: 13px; height: 13px; fill: none; stroke: var(--muted); stroke-width: 2; }
+.mockup-kasir { padding: 5px 12px; color: #fff; background: var(--primary); border-radius: 99px; font-size: 10px; font-weight: 800; }
+.mockup-content { flex: 1; display: flex; flex-direction: column; gap: 14px; padding: 18px; overflow: hidden; }
+.mockup-title { color: var(--ink); font-size: 15px; font-weight: 800; }
+.mockup-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.mockup-card { display: flex; flex-direction: column; gap: 4px; padding: 12px; border: 1px solid var(--border); border-radius: 12px; background: #fff; }
+.mockup-card svg { width: 15px; height: 15px; margin-bottom: 2px; fill: none; stroke: var(--primary); stroke-width: 2; }
+.mockup-card strong { color: var(--ink); font-size: 15px; font-weight: 800; }
+.mockup-card span { color: var(--muted); font-size: 10px; }
+.mockup-panel { display: flex; align-items: center; gap: 8px; padding: 14px; color: var(--ink); background: var(--surface-2); border: 1px solid var(--border); border-radius: 12px; font-size: 11px; font-weight: 700; }
+.mockup-panel i { width: 22px; height: 7px; border-radius: 99px; background: var(--border); }
 .operations-visual blockquote { position: absolute; z-index: 5; right: 22px; bottom: 22px; left: 22px; margin: 0; padding: 22px; color: #302a2b; background: rgba(255,255,255,.92); border-radius: 14px; box-shadow: 0 10px 30px rgba(36,27,29,.14); font-size: 14px; font-weight: 650; font-style: italic; }
 .operations-visual cite { margin-top: 8px; display: block; color: var(--primary); font-size: 12px; font-style: normal; }
 .benefits-copy .section-intro { margin-bottom: 31px; }
@@ -330,7 +338,6 @@ p, h1, h2, h3, blockquote { margin-top: 0; }
   .hero-banner-frame { border-radius: 17px; }
   .operations-visual { min-height: 430px; }
   .operations-visual blockquote { font-size: 12px; }
-  .operator { transform: translateX(-50%) scale(.85); }
 }
 
 @media (prefers-reduced-motion: reduce) {
