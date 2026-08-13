@@ -4,6 +4,7 @@ namespace App\Modules\TenantOnboarding\Infrastructure\Tenancy;
 
 use App\Models\Branch;
 use App\Models\User;
+use App\Modules\Organization\Application\SeedDefaultAccessControl;
 use App\Modules\ProductEngine\Domain\EngineCode;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
@@ -73,6 +74,10 @@ class InitializeTenantDatabase
                     'updated_at' => now(),
                 ],
             );
+
+            $accessControl = new SeedDefaultAccessControl;
+            $ownerRoleId = $accessControl->ensureOwnerRole($tenantId);
+            $accessControl->assignRole($user->getKey(), $ownerRoleId);
 
             $primaryEngineCode = EngineCode::fromRentalConfiguration(
                 $onboarding['configuration']['booking_strategy'],

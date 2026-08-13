@@ -98,6 +98,37 @@ beforeEach(function () {
         $table->text('configuration')->nullable();
         $table->timestamps();
     });
+
+    Schema::create('roles', function (Blueprint $table): void {
+        $table->id();
+        $table->string('tenant_id')->nullable()->index();
+        $table->string('name');
+        $table->string('code');
+        $table->boolean('is_system')->default(false);
+        $table->timestamps();
+        $table->unique(['tenant_id', 'code']);
+    });
+
+    Schema::create('permissions', function (Blueprint $table): void {
+        $table->id();
+        $table->string('name');
+        $table->string('code')->unique();
+        $table->string('module');
+        $table->timestamps();
+    });
+
+    Schema::create('role_permissions', function (Blueprint $table): void {
+        $table->unsignedBigInteger('role_id');
+        $table->unsignedBigInteger('permission_id');
+        $table->primary(['role_id', 'permission_id']);
+    });
+
+    Schema::create('user_roles', function (Blueprint $table): void {
+        $table->unsignedBigInteger('user_id');
+        $table->unsignedBigInteger('role_id');
+        $table->unsignedBigInteger('branch_id')->nullable();
+        $table->unique(['user_id', 'role_id', 'branch_id']);
+    });
 });
 
 test('registration creates a main branch from the business name for the owner', function () {
@@ -194,4 +225,17 @@ test('registration creates a main branch from the business name for the owner', 
         'current_step' => 'inventory_setup',
     ]);
     $this->assertDatabaseCount('tenant_payment_methods', 1);
+
+    $ownerRoleId = DB::table('roles')->where(['tenant_id' => $tenantId, 'code' => 'owner'])->value('id');
+    expect($ownerRoleId)->not->toBeNull();
+    $this->assertDatabaseCount('roles', 1);
+    $this->assertDatabaseHas('user_roles', [
+        'user_id' => DB::table('users')->value('id'),
+        'role_id' => $ownerRoleId,
+        'branch_id' => null,
+    ]);
+    $this->assertDatabaseCount('user_roles', 1);
+    expect(DB::table('role_permissions')->where('role_id', $ownerRoleId)->count())
+        ->toBe(DB::table('permissions')->count())
+        ->toBeGreaterThan(0);
 });

@@ -39,6 +39,7 @@ class User extends Authenticatable
     public function branches(): BelongsToMany
     {
         return $this->belongsToMany(Branch::class, 'branch_users')
+            ->using(BranchUser::class)
             ->withPivot('is_primary')
             ->withTimestamps();
     }

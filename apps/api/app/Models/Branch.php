@@ -37,6 +37,7 @@ class Branch extends Model
     public function users(): BelongsToMany
     {
         return $this->belongsToMany(User::class, 'branch_users')
+            ->using(BranchUser::class)
             ->withPivot('is_primary')
             ->withTimestamps();
     }

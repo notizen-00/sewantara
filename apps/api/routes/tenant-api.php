@@ -20,12 +20,14 @@ use App\Http\Controllers\Api\Tenant\ProductImageController;
 use App\Http\Controllers\Api\Tenant\ProductPriceController;
 use App\Http\Controllers\Api\Tenant\ProductUnitController;
 use App\Http\Controllers\Api\Tenant\PublicArticleController;
+use App\Http\Controllers\Api\Tenant\RoleController;
 use App\Http\Controllers\Api\Tenant\SalesOrderController;
 use App\Http\Controllers\Api\Tenant\SubscriptionPaymentController;
 use App\Http\Controllers\Api\Tenant\TenantAuthController;
 use App\Http\Controllers\Api\Tenant\TenantMediaController;
 use App\Http\Controllers\Api\Tenant\TenantOnboardingController;
 use App\Http\Controllers\Api\Tenant\TenantSettingController;
+use App\Http\Controllers\Api\Tenant\UserController;
 use Illuminate\Support\Facades\Route;
 
 Route::post('tenant/auth/login', [TenantAuthController::class, 'login'])
@@ -103,6 +105,11 @@ Route::prefix('tenant/{tenant}')
                     Route::apiResource('branches', BranchController::class)->only(['index', 'store', 'update']);
                     Route::post('/branches/{branch}/sync-master-data', [BranchController::class, 'syncMasterData'])
                         ->name('branches.sync-master-data');
+                    Route::post('/users/{user}/roles', [UserController::class, 'assignRole'])
+                        ->name('users.roles.assign');
+                    Route::apiResource('users', UserController::class);
+                    Route::get('/roles', [RoleController::class, 'index'])
+                        ->name('roles.index');
                     Route::post('/categories/{category}/image', [CategoryController::class, 'storeImage'])
                         ->name('categories.image.store');
                     Route::delete('/categories/{category}/image', [CategoryController::class, 'destroyImage'])
