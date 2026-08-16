@@ -38,7 +38,7 @@ jobs:
       apps-list: ${{ steps.detect.outputs.apps-list }}
       has-components: ${{ steps.detect.outputs.has-components }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
 

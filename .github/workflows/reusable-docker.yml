@@ -87,7 +87,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Resolve registry namespace
         id: registry
@@ -148,14 +148,14 @@ jobs:
 
       - name: Set up QEMU
         if: contains(inputs.platforms, 'arm')
-        uses: docker/setup-qemu-action@v3
+        uses: docker/setup-qemu-action@v4
 
       - name: Set up Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
 
       - name: Log in to GHCR
         if: inputs.push
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -163,7 +163,7 @@ jobs:
 
       - name: Derive tags and labels
         id: meta
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@v6
         with:
           images: ${{ steps.registry.outputs.namespace }}/${{ inputs.image }}
           flavor: |
@@ -183,7 +183,7 @@ jobs:
 
       - name: Build${{ inputs.push && ' and push' || '' }}
         id: build
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: ${{ inputs.context }}
           file: ${{ inputs.dockerfile }}
@@ -215,7 +215,7 @@ jobs:
       - name: Scan image
         id: scan
         if: inputs.push && inputs.scan
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@v0.36.0
         continue-on-error: ${{ !inputs.fail-on-vulnerabilities }}
         env:
           TRIVY_USERNAME: ${{ github.actor }}
@@ -231,7 +231,7 @@ jobs:
       - name: Publish scan results
         if: always() && steps.scan.outcome != 'skipped'
         continue-on-error: true
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: trivy-${{ inputs.component }}.sarif
           category: trivy-${{ inputs.component }}
