@@ -24,7 +24,7 @@ ENV VITE_REVERB_SCHEME=${VITE_REVERB_SCHEME}
 
 RUN mkdir -p public && npm run build
 
-FROM php:8.4-fpm-bookworm AS app
+FROM php:8.5-fpm-bookworm AS app
 
 ENV APP_ENV=production
 ENV COMPOSER_ALLOW_SUPERUSER=1
